@@ -1,0 +1,26 @@
+{
+  "test_id": "test-03-k2.7",
+  "test_name": "Tool Access in Subagent (K2.7)",
+  "objective": "Verify subagent can access tools (file read test) with K2.7",
+  "spawn_config": {
+    "task": "Read the file at /Users/sage/.openclaw/workspace/SOUL.md and return the first 3 lines",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "file_read": true,
+    "content_present": true,
+    "no_errors": true
+  },
+  "failure_patterns": [
+    "Tool not found",
+    "sandbox unavailable",
+    "tool.*not.*available",
+    "401 Invalid Authentication"
+  ],
+  "detect": {
+    "tool_failure": "Check for 'Tool not found' or sandbox errors",
+    "auth_error": "Check for 401 errors",
+    "no_content": "Check if result doesn't contain expected file content"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "test_id": "test-04-k2.7",
+  "test_name": "Parallel Subagent Spawn (K2.7)",
+  "timestamp": "2026-06-15T17:17:00Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "Calculate the square of this number: {{number}}",
+    "model": "kimi/k2.7",
+    "count": 3,
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "all_complete": true,
+    "no_errors": true,
+    "results_consistent": true
+  },
+  "actual": {
+    "subagent_results": [25, 49, 81],
+    "all_complete": true,
+    "no_errors": true,
+    "runtime_seconds": [9, 6, 6],
+    "total_runtime_seconds": 9
+  },
+  "errors": [],
+  "warnings": [],
+  "latency_ms": 9000,
+  "failure_patterns_found": []
+}

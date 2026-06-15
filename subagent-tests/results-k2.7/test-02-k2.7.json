@@ -1,0 +1,25 @@
+{
+  "test_id": "test-02-k2.7",
+  "test_name": "Model Override (K2.7)",
+  "timestamp": "2026-06-15T17:16:00Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "Return your model name and version",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "model_used": "kimi/k2.7",
+    "no_errors": true
+  },
+  "actual": {
+    "model_used": "kimi/k2.7",
+    "status": "completed",
+    "runtime_seconds": 9,
+    "tokens": 590
+  },
+  "errors": [],
+  "warnings": [],
+  "latency_ms": 9000,
+  "failure_patterns_found": []
+}

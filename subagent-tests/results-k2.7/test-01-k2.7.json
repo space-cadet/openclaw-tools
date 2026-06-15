@@ -1,0 +1,26 @@
+{
+  "test_id": "test-01-k2.7",
+  "test_name": "Basic Subagent Spawn (K2.7)",
+  "timestamp": "2026-06-15T17:15:00Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "Calculate 2+2 and return only the answer as a number",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "answer": "4",
+    "status": "completed",
+    "no_errors": true
+  },
+  "actual": {
+    "answer": "4",
+    "status": "completed",
+    "runtime_seconds": 7,
+    "tokens": 506
+  },
+  "errors": [],
+  "warnings": [],
+  "latency_ms": 7000,
+  "failure_patterns_found": []
+}

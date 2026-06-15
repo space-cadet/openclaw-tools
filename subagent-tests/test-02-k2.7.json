@@ -1,0 +1,25 @@
+{
+  "test_id": "test-02-k2.7",
+  "test_name": "Model Override (K2.7)",
+  "objective": "Check if subagent with explicit K2.7 model override works",
+  "spawn_config": {
+    "task": "Return your model name and version",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "model_used": "kimi/k2.7",
+    "no_errors": true
+  },
+  "failure_patterns": [
+    "401 Invalid Authentication",
+    "model fallback",
+    "MiniMax",
+    "fallback to"
+  ],
+  "detect": {
+    "auth_error": "Check for 401/Unauthorized in output",
+    "fallback": "Check if subagent reports using different model than requested",
+    "wrong_model": "Check if result doesn't mention k2.7"
+  }
+}

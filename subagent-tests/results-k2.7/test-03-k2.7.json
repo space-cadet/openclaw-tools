@@ -1,0 +1,27 @@
+{
+  "test_id": "test-03-k2.7",
+  "test_name": "Tool Access in Subagent (K2.7)",
+  "timestamp": "2026-06-15T17:16:00Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "Read the file at /Users/sage/.openclaw/workspace/SOUL.md and return the first 3 lines",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "file_read": true,
+    "content_present": true,
+    "no_errors": true
+  },
+  "actual": {
+    "file_read": true,
+    "content": "# SOUL.md - Who You Are\\n\\n_You're not a chatbot. You're becoming someone._",
+    "status": "completed",
+    "runtime_seconds": 13,
+    "tokens": 2200
+  },
+  "errors": [],
+  "warnings": [],
+  "latency_ms": 13000,
+  "failure_patterns_found": []
+}

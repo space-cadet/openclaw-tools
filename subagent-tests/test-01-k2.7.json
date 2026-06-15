@@ -1,0 +1,31 @@
+{
+  "test_id": "test-01-k2.7",
+  "test_name": "Basic Subagent Spawn (K2.7)",
+  "objective": "Verify subagents can spawn and complete simple tasks with K2.7",
+  "spawn_config": {
+    "task": "Calculate 2+2 and return only the answer as a number",
+    "model": "kimi/k2.7",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "answer": "4",
+    "status": "completed",
+    "no_errors": true
+  },
+  "failure_patterns": [
+    "401 Invalid Authentication",
+    "Unauthorized",
+    "timeout",
+    "model fallback",
+    "MiniMax",
+    "Tool not found",
+    "sandbox unavailable"
+  ],
+  "detect": {
+    "auth_error": "Check for 401/Unauthorized in output",
+    "fallback": "Check if model used differs from requested",
+    "tool_failure": "Check for 'Tool not found' or sandbox errors",
+    "timeout": "Check if completion takes > 60s",
+    "wrong_answer": "Check if answer != 4"
+  }
+}
