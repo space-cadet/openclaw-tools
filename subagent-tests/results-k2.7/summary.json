@@ -1,0 +1,23 @@
+{
+  "suite": "subagent-tests-k2.7",
+  "date": "2026-06-15T23:30:00Z",
+  "model": "kimi/k2.7",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "tests": [
+    {"id": "test-01", "name": "Basic spawn", "status": "PASS", "result": "4", "duration": "6s"},
+    {"id": "test-02", "name": "Model override (K2.5)", "status": "PASS", "result": "kimi/k2.5", "duration": "7s"},
+    {"id": "test-03", "name": "Tool access", "status": "PASS", "result": "File read OK", "duration": "13s"},
+    {"id": "test-04", "name": "Parallel (3 agents)", "status": "PASS", "result": "25, 49, 144", "duration": "7s max"},
+    {"id": "test-05", "name": "QHE-BHE numerics", "status": "PASS", "result": "Octahedron + icosahedron spectra computed", "duration": "2m"},
+    {"id": "test-06", "name": "Timeout stress", "status": "PASS", "result": "All 6 configs passed (1K-300K)", "duration": "1m18s max"}
+  ],
+  "vs_k2.6": {
+    "k2.6_result": "test-06 failed at 50K count with CommandLaneTaskTimeoutError",
+    "k2.7_result": "All configs passed including 300K count",
+    "conclusion": "K2.7 fixes the subagent crash bug present in K2.6"
+  }
+}
