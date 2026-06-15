@@ -1,0 +1,8 @@
+{
+  "name": "subagent-tests",
+  "version": "0.1.0",
+  "description": "Test suite for OpenClaw subagent functionality",
+  "scripts": {
+    "test": "echo 'Run individual tests: bash test-01-basic-spawn.sh'"
+  }
+}

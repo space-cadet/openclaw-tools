@@ -1,0 +1,27 @@
+{
+  "test_id": "test-01",
+  "test_name": "Basic Subagent Spawn",
+  "timestamp": "2026-06-15T15:51:00Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "Calculate 2+2",
+    "model": "default",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "answer": "4",
+    "status": "completed",
+    "no_errors": true
+  },
+  "actual": {
+    "answer": "4",
+    "status": "completed",
+    "errors": false,
+    "model_used": "kimi/k2p6",
+    "latency_ms": 7000
+  },
+  "errors": [],
+  "warnings": [],
+  "failure_patterns_found": [],
+  "notes": "Subagent completed successfully with correct answer in 7s"
+}

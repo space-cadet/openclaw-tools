@@ -1,0 +1,25 @@
+{
+  "test_id": "test-02",
+  "test_name": "Model Override (K2.5)",
+  "timestamp": "2026-06-15T15:52:15Z",
+  "status": "PASS",
+  "spawn_config": {
+    "task": "What is your model name?",
+    "model": "kimi/k2.5",
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "model_used": "kimi/k2.5",
+    "no_errors": true
+  },
+  "actual": {
+    "model_used": "kimi/k2.5",
+    "status": "completed",
+    "errors": false,
+    "latency_ms": 10000
+  },
+  "errors": [],
+  "warnings": [],
+  "failure_patterns_found": [],
+  "notes": "Model override worked correctly - subagent reported kimi/k2.5"
+}

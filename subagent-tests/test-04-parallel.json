@@ -1,0 +1,28 @@
+{
+  "test_id": "test-04",
+  "test_name": "Parallel Subagent Spawn",
+  "objective": "Check if multiple subagents can run simultaneously",
+  "spawn_config": {
+    "task": "Calculate the square of this number: {{number}}",
+    "model": "default",
+    "count": 3,
+    "timeoutSeconds": 60
+  },
+  "expected": {
+    "all_complete": true,
+    "no_errors": true,
+    "results_consistent": true
+  },
+  "failure_patterns": [
+    "rate limit",
+    "too many requests",
+    "timeout",
+    "401 Invalid Authentication"
+  ],
+  "detect": {
+    "rate_limit": "Check for rate limit errors",
+    "timeout": "Check if any subagent takes >60s",
+    "auth_error": "Check for 401 errors in any subagent",
+    "partial_failure": "Check if some subagents fail while others succeed"
+  }
+}

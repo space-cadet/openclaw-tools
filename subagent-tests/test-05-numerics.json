@@ -1,0 +1,31 @@
+{
+  "test_id": "test-05",
+  "test_name": "QHE-BHE Numerics (Resonance Graph)",
+  "objective": "Subagent computes resonance graph spectrum for octahedron (known result)",
+  "spawn_config": {
+    "task": "Run the octahedron resonance graph computation. The octahedron has 8 perfect matchings and its resonance graph should be a cube with Laplacian spectrum {0, 2, 2, 2, 4, 4, 4, 6}. Navigate to ~/.openclaw/workspace/code/qhe_bhe and run the T17 script if available, or compute the resonance graph manually. Return the spectrum and whether the graph is connected.",
+    "model": "default",
+    "timeoutSeconds": 120
+  },
+  "expected": {
+    "spectrum": "{0, 2, 2, 2, 4, 4, 4, 6}",
+    "connected": true,
+    "vertices": 8,
+    "edges": 12
+  },
+  "failure_patterns": [
+    "401 Invalid Authentication",
+    "Tool not found",
+    "sandbox unavailable",
+    "timeout",
+    "module not found",
+    "ImportError"
+  ],
+  "detect": {
+    "auth_error": "Check for 401/Unauthorized",
+    "tool_failure": "Check for tool access errors",
+    "wrong_result": "Check if spectrum doesn't match expected cube spectrum",
+    "timeout": "Check if computation takes >120s",
+    "import_error": "Check if Python imports fail"
+  }
+}
