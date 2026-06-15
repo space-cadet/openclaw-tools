@@ -1,0 +1,22 @@
+{
+  "test_id": "test-07",
+  "test_name": "OpenRouter Subagent Comparison",
+  "objective": "Compare subagent behavior with OpenRouter vs Kimi to determine if failures are provider-specific",
+  "description": "Run identical subagent tasks through OpenRouter to see if the same failures (command lane timeout, registry settlement) occur. This isolates whether the issue is Kimi-specific or an OpenClaw infrastructure problem.",
+  "spawn_configs": [
+    {"provider": "openrouter", "model": "openrouter/google/gemini-2.0-flash", "task": "Count from 1 to 50000, return the last number. Do this by iterating in Python.", "timeoutSeconds": 45, "expected_duration": "~20s"}
+  ],
+  "expected": {
+    "status": "completed",
+    "no_timeout": true,
+    "no_registry_error": true
+  },
+  "failure_patterns": [
+    "session completed before registry settled",
+    "CommandLaneTaskTimeoutError",
+    "401 Invalid Authentication"
+  ],
+  "detect": {
+    "provider_specific": "If OpenRouter fails with same error, it's infrastructure; if not, it's Kimi-specific"
+  }
+}
