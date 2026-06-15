@@ -1,0 +1,32 @@
+{
+  "test_id": "test-08",
+  "test_name": "Kimi K2.7 Subagent Test",
+  "timestamp": "2026-06-15T16:25:00Z",
+  "status": "PASS",
+  "sub_tests": {
+    "test08_k27": {
+      "provider": "kimi",
+      "model": "k2.7",
+      "timeout": 45,
+      "status": "completed",
+      "actual_duration": 36,
+      "result": "50000",
+      "notes": "Same task that failed with K2.6 (test06_45s). K2.7 completed successfully."
+    }
+  },
+  "comparison": {
+    "k2.6_test06_45s": {
+      "model": "kimi/k2.6",
+      "status": "failed",
+      "error": "CommandLaneTaskTimeoutError after 75s"
+    },
+    "k2.7_test08_k27": {
+      "model": "kimi/k2.7",
+      "status": "completed",
+      "actual_duration": 36,
+      "result": "50000"
+    }
+  },
+  "conclusion": "EXCELLENT NEWS: Subagent failures are specific to K2.6, NOT all Kimi models. K2.7 handles subagents correctly. Upgrade to K2.7 for subagent workloads.",
+  "recommendation": "Use K2.7 instead of K2.6 for subagent tasks. The issue appears to be fixed in the newer model."
+}

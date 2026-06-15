@@ -1,0 +1,20 @@
+{
+  "test_id": "test-08",
+  "test_name": "Kimi K2.7 Subagent Test",
+  "objective": "Test if the newer K2.7 model has the same subagent failure as K2.6",
+  "description": "Run the same counting task (50,000) with K2.7 to see if the CommandLaneTaskTimeoutError is specific to K2.6 or affects all Kimi models.",
+  "spawn_configs": [
+    {"provider": "kimi", "model": "kimi/k2.7", "task": "Count from 1 to 50000, return the last number. Do this by iterating in Python.", "timeoutSeconds": 45, "expected_duration": "~20s"}
+  ],
+  "expected": {
+    "status": "completed",
+    "no_timeout": true
+  },
+  "failure_patterns": [
+    "CommandLaneTaskTimeoutError",
+    "session completed before registry settled"
+  ],
+  "detect": {
+    "model_specific": "If K2.7 passes, the issue is specific to K2.6"
+  }
+}
