@@ -1,0 +1,42 @@
+{
+  "test_id": "test-06",
+  "test_name": "Timeout Stress Test",
+  "timestamp": "2026-06-15T16:15:00Z",
+  "status": "FAIL",
+  "sub_tests": {
+    "test06_15s": {
+      "timeout": 15,
+      "status": "completed",
+      "actual_duration": 15,
+      "result": "1000",
+      "notes": "Completed but output all 1000 numbers (very verbose)"
+    },
+    "test06_30s": {
+      "timeout": 30,
+      "status": "completed",
+      "actual_duration": 17,
+      "result": "10000",
+      "notes": "Completed successfully"
+    },
+    "test06_45s": {
+      "timeout": 45,
+      "status": "failed",
+      "actual_duration": 20,
+      "error": "CommandLaneTaskTimeoutError: Command lane subagent task timed out after 75000ms",
+      "notes": "Task completed (returned 50000) but then hit command lane timeout. Different from test05 failure."
+    }
+  },
+  "errors": [
+    "test06_45s: Command lane timeout after 75s despite task completing in 20s",
+    "Previous test05_numerics: 'session completed before registry settled' (different error)"
+  ],
+  "warnings": [
+    "Two different failure modes detected: (1) command lane timeout, (2) registry settlement failure",
+    "Failures may depend on task type, not just duration"
+  ],
+  "failure_patterns_found": [
+    "CommandLaneTaskTimeoutError",
+    "session completed before registry settled"
+  ],
+  "notes": "CRITICAL FINDING: Subagents fail in at least TWO different ways. 1) Command lane timeout (test06_45s): Task finishes but command infrastructure times out. 2) Registry settlement failure (test05_numerics): Session infrastructure crashes. This suggests the failure is NOT just about duration but about the type of work being done (numerics vs simple counting)."
+}

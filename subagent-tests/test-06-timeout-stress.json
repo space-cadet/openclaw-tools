@@ -1,0 +1,27 @@
+{
+  "test_id": "test-06",
+  "test_name": "Timeout Stress Test",
+  "objective": "Find the subagent crash threshold by testing progressively longer computations",
+  "description": "Spawn multiple subagents with increasing timeouts (15s, 30s, 45s, 60s, 90s, 120s) doing simple busy-work. Record which ones complete and which fail with 'session completed before registry settled'.",
+  "spawn_configs": [
+    {"task": "Count from 1 to 1000, return the last number", "timeoutSeconds": 15, "expected_duration": "~5s"},
+    {"task": "Count from 1 to 10000, return the last number", "timeoutSeconds": 30, "expected_duration": "~10s"},
+    {"task": "Count from 1 to 50000, return the last number", "timeoutSeconds": 45, "expected_duration": "~20s"},
+    {"task": "Count from 1 to 100000, return the last number", "timeoutSeconds": 60, "expected_duration": "~30s"},
+    {"task": "Count from 1 to 200000, return the last number", "timeoutSeconds": 90, "expected_duration": "~50s"},
+    {"task": "Count from 1 to 300000, return the last number", "timeoutSeconds": 120, "expected_duration": "~70s"}
+  ],
+  "expected": {
+    "all_complete": true
+  },
+  "failure_patterns": [
+    "session completed before registry settled",
+    "timeout",
+    "401 Invalid Authentication"
+  ],
+  "detect": {
+    "crash_threshold": "Identify the timeout/duration where subagents start failing",
+    "auth_error": "Check for 401 errors",
+    "timeout_pattern": "Check if failures correlate with timeout or duration"
+  }
+}
