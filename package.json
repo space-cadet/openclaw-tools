@@ -1,0 +1,10 @@
+{
+  "name": "kimi-benchmarks",
+  "version": "1.0.0",
+  "description": "Benchmark comparing Kimi K2.6 vs K2.7 Code coding abilities",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "sql.js": "^1.14.1"
+  }
+}
