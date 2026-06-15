@@ -12,16 +12,18 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | ID | Title | Status | Priority | Started | Completed | Dependencies | Details |
 |----|-------|--------|----------|---------|-----------|--------------|---------|
 | T1 | K2.6 vs K2.7 Code benchmark: mini LISP interpreter challenge | ✅ | MEDIUM | 2026-06-15 | 2026-06-15 | - | [Details](tasks/T1.md) |
+| T2 | Subagent Compatibility Test Suite: K2.6 vs K2.7 | ✅ | HIGH | 2026-06-15 | 2026-06-15 | - | [Details](tasks/T2.md) |
 
 ## Task Relationships
 
 ```
 T1: K2.6 vs K2.7 Code benchmark: mini LISP interpreter challenge
+T2: Subagent Compatibility Test Suite: K2.6 vs K2.7
 ```
 
 ## Status Summary
 
 - **Active**: 0
-- **Completed**: 1
+- **Completed**: 2
 - **Paused**: 0
-- **Total**: 1
+- **Total**: 2

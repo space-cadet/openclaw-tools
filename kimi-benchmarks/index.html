@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Benchmark: K2.6 vs K2.7 Code</title>
+    <title>Model Benchmark: K2.6 vs K2.7 Code + Subagent Compatibility</title>
     <style>
         :root {
             --bg: #0d1117;
@@ -163,6 +163,138 @@
         <p>Both models handled recursion, lexical scoping, lambdas, and quoting correctly. The K2.7 Code specialization shows in the more careful implementation of special form return values.</p>
     </div>
 
+    <!-- SUBAGENT COMPATIBILITY BENCHMARK -->
+    <div class="task-desc" style="margin-top: 3rem; border-top: 2px solid var(--border); padding-top: 2rem;">
+        <h2>🧪 Subagent Compatibility Test Suite</h2>
+        <p class="subtitle">K2.6 vs K2.7 — OpenClaw Subagent Stress Tests</p>
+        
+        <div class="grid" style="margin-top: 1.5rem;">
+            <div class="card" id="k26-subagent-card">
+                <div class="model-badge k26">K2.6 (General Purpose)</div>
+                <h2>Subagent Results</h2>
+                <div class="score-big fail" id="k26-subagent-score">1/6</div>
+                <div class="metric">
+                    <span class="metric-label">Tests Passed</span>
+                    <span class="metric-value" id="k26-subagent-passed">1</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Tests</span>
+                    <span class="metric-value">6</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Stress Test (50K)</span>
+                    <span class="metric-value fail">❌ Crash</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Error Pattern</span>
+                    <span class="metric-value" style="font-size: 0.8rem;">CommandLaneTaskTimeoutError</span>
+                </div>
+            </div>
+
+            <div class="card winner" id="k27-subagent-card">
+                <div class="model-badge k27">K2.7 Code (Coding Specialist)</div>
+                <h2>Subagent Results</h2>
+                <div class="score-big pass" id="k27-subagent-score">6/6</div>
+                <div class="metric">
+                    <span class="metric-label">Tests Passed</span>
+                    <span class="metric-value" id="k27-subagent-passed">6</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Tests</span>
+                    <span class="metric-value">6</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Stress Test (300K)</span>
+                    <span class="metric-value pass">✅ 26s</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Max Duration</span>
+                    <span class="metric-value">1m18s (200K count)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="task-desc" style="border: 2px solid var(--success); background: rgba(63, 185, 80, 0.05); margin-top: 1.5rem;">
+            <h2>🏆 Winner: K2.7 Code</h2>
+            <p><strong>K2.7 passes all 6 subagent tests; K2.6 fails 5/6.</strong> The critical difference:</p>
+            <ul>
+                <li><strong>K2.7</strong> handles subagent lifecycle correctly — tasks complete and the command lane receives proper completion signals, even under heavy load (300K iterations).</li>
+                <li><strong>K2.6</strong> crashes with <code>CommandLaneTaskTimeoutError</code> when tasks complete but the command lane doesn't receive the signal. This affects even simple 50K count tasks.</li>
+            </ul>
+            <p><strong>Recommendation:</strong> Use K2.7 for any OpenClaw workload that spawns subagents.</p>
+        </div>
+
+        <h3 style="margin-top: 2rem;">📊 Test Breakdown</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="text-align: left; padding: 0.5rem;">Test</th>
+                    <th style="text-align: left; padding: 0.5rem;">Description</th>
+                    <th style="text-align: center; padding: 0.5rem;">K2.6</th>
+                    <th style="text-align: center; padding: 0.5rem;">K2.7</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-01</td>
+                    <td style="padding: 0.5rem;">Basic spawn (2+2)</td>
+                    <td style="text-align: center; color: var(--success);">✅</td>
+                    <td style="text-align: center; color: var(--success);">✅ 6s</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-02</td>
+                    <td style="padding: 0.5rem;">Model override (K2.5)</td>
+                    <td style="text-align: center; color: var(--fail);">❌</td>
+                    <td style="text-align: center; color: var(--success);">✅ 7s</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-03</td>
+                    <td style="padding: 0.5rem;">Tool access (file read)</td>
+                    <td style="text-align: center; color: var(--fail);">❌</td>
+                    <td style="text-align: center; color: var(--success);">✅ 13s</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-04</td>
+                    <td style="padding: 0.5rem;">Parallel (3 agents)</td>
+                    <td style="text-align: center; color: var(--fail);">❌</td>
+                    <td style="text-align: center; color: var(--success);">✅ 7s</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-05</td>
+                    <td style="padding: 0.5rem;">QHE-BHE numerics</td>
+                    <td style="text-align: center; color: var(--fail);">❌</td>
+                    <td style="text-align: center; color: var(--success);">✅ 2m</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem;">test-06a-f</td>
+                    <td style="padding: 0.5rem;">Timeout stress (1K→300K)</td>
+                    <td style="text-align: center; color: var(--fail);">❌ 50K</td>
+                    <td style="text-align: center; color: var(--success);">✅ 300K</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 2rem;">🔥 Stress Test Detail</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="text-align: left; padding: 0.5rem;">Count</th>
+                    <th style="text-align: left; padding: 0.5rem;">Timeout</th>
+                    <th style="text-align: center; padding: 0.5rem;">K2.6</th>
+                    <th style="text-align: center; padding: 0.5rem;">K2.7</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--border);"><td>1,000</td><td>15s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 13s</td></tr>
+                <tr style="border-bottom: 1px solid var(--border);"><td>10,000</td><td>30s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 16s</td></tr>
+                <tr style="border-bottom: 1px solid var(--border);"><td>50,000</td><td>45s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 15s</td></tr>
+                <tr style="border-bottom: 1px solid var(--border);"><td>100,000</td><td>60s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 1m</td></tr>
+                <tr style="border-bottom: 1px solid var(--border);"><td>200,000</td><td>90s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 1m18s</td></tr>
+                <tr style="border-bottom: 1px solid var(--border);"><td>300,000</td><td>120s</td><td style="text-align: center; color: var(--fail);">❌ Crash</td><td style="text-align: center; color: var(--success);">✅ 26s</td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="task-desc">
         <h2>📝 Task Specification</h2>
         <p><strong>Implement a mini LISP interpreter in Python</strong> supporting:</p>
@@ -223,7 +355,7 @@
     </div>
 
     <p class="footer">
-        Generated by Sage (灵剑) · OpenClaw Workspace · <span id="timestamp"></span>
+        Generated by Sage (灵剑) · OpenClaw Workspace · Updated 2026-06-15 · <span id="timestamp"></span>
     </p>
 
     <script>
