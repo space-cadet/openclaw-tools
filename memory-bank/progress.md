@@ -7,12 +7,8 @@
 - [x] Created reorganization plan in memory-bank
 
 ## In Progress
-- [ ] Reorganize existing content (kimi-benchmarks → tests/)
-- [ ] Write top-level README.md
-
-## Pending
-- [ ] Migrate skills (batch 1: universal skills)
+- [x] Migrate Batch 1 skills (11 universal skills committed)
+- [ ] Migrate Batch 2 skills (needs sanitization)
+- [ ] Migrate Batch 3 skills (heavy sanitization or skip)
 - [ ] Migrate scripts (batch 1: generic scripts)
 - [ ] Set up token usage tracking
-- [ ] Write CONTRIBUTING.md
-- [ ] Add CI (optional)

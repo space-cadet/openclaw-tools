@@ -4,38 +4,42 @@
 - [x] Rename `openclaw-tests` → `openclaw-tools`
 - [x] Clone to workspace
 - [x] Set up memory-bank (v6.12)
-- [ ] Write README.md for the repo
+- [x] Write README.md for the repo (placeholder)
 - [ ] Write CONTRIBUTING.md
 - [ ] Set up `.gitignore` for workspace artifacts
 
 ## T2: Reorganize Existing Content
-- [ ] Move `kimi-benchmarks/` → `tests/kimi-benchmarks/`
-- [ ] Move `subagent-tests/` → `tests/subagent-tests/`
+- [x] Move `kimi-benchmarks/` → `tests/kimi-benchmarks/`
+- [x] Move `subagent-tests/` → `tests/subagent-tests/`
 - [ ] Update any internal references in moved content
 - [ ] Verify benchmarks still run after move
 
 ## T3: Migrate Skills (Sanitized)
-- [ ] `token-usage` — universal, already in git
-- [ ] `bookmarks` — generic, no personal refs
-- [ ] `red-team` — universal
-- [ ] `mb-init` — useful for anyone
-- [ ] `mb-text-workflow` — useful for anyone
-- [ ] `mb-db-workflow` — useful for anyone
-- [ ] `openclaw-backup` — universal
-- [ ] `openclaw-backup-optimized` — universal
-- [ ] `pass-secrets` — sanitize store paths, keep generic
-- [ ] `self-improving-agent` — universal
-- [ ] `time-awareness` — generic
-- [ ] `timer-build-monitor` — generic
-- [ ] `beads` — needs check for personal references
-- [ ] `cloakbrowser-stealth` — needs check for personal refs
-- [ ] `mcp-client` — needs check for personal refs
-- [ ] `kimiim` — needs check for personal refs
-- [ ] `kimi-webbridge-desktop` — needs check for personal refs
-- [ ] `kimi-desktop-gateway-policy` — **needs heavy sanitization or skip**
-- [ ] `mulch` — needs check for personal refs
-- [ ] `pdf-extract` — probably universal
-- [ ] `worker-safety` — needs check
+- [x] **Batch 1 — Universal, no sanitization needed:**
+  - [x] `token-usage` — universal, already in git
+  - [x] `red-team` — universal
+  - [x] `mb-init` — generic memory-bank tool
+  - [x] `mb-text-workflow` — generic, sanitized paths
+  - [x] `mb-db-workflow` — generic, sanitized paths
+  - [x] `openclaw-backup` — universal
+  - [x] `openclaw-backup-optimized` — universal
+  - [x] `self-improving-agent` — universal pattern
+  - [x] `time-awareness` — generic
+  - [x] `timer-build-monitor` — generic
+  - [x] `pdf-extract` — utility
+- [ ] **Batch 2 — Needs sanitization:**
+  - [ ] `bookmarks` — remove Telegram-specific chat IDs
+  - [ ] `beads` — check for Dolt-specific paths
+  - [ ] `pass-secrets` — remove store paths, keep generic
+  - [ ] `cloakbrowser-stealth` — check for hardcoded paths
+  - [ ] `mcp-client` — check for personal server configs
+  - [ ] `kimiim` — check for Kimi-specific group references
+  - [ ] `kimi-webbridge-desktop` — check for installation paths
+  - [ ] `mulch` — check for domain config
+  - [ ] `worker-safety` — check for personal safety rules
+- [ ] **Batch 3 — Heavy sanitization or skip:**
+  - [ ] `kimi-desktop-gateway-policy` — very Kimi-specific
+  - [ ] `image-handoff` — already shared with Cloudy, check for duplicates
 
 ## T4: Migrate Scripts (Sanitized)
 - [ ] `git-guardian.sh` — generic, useful
