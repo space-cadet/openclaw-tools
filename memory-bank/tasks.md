@@ -15,19 +15,19 @@
 - [ ] Verify benchmarks still run after move
 
 ## T3: Migrate Skills (Sanitized)
-- [x] **Batch 1 — Universal, no sanitization needed:**
+- [x] **Batch 1 — Original skills (Sage-created), universal:**
   - [x] `token-usage` — universal, already in git
   - [x] `red-team` — universal
   - [x] `mb-init` — generic memory-bank tool
   - [x] `mb-text-workflow` — generic, sanitized paths
   - [x] `mb-db-workflow` — generic, sanitized paths
-  - [x] `openclaw-backup` — universal
-  - [x] `openclaw-backup-optimized` — universal
-  - [x] `self-improving-agent` — universal pattern
   - [x] `time-awareness` — generic
   - [x] `timer-build-monitor` — generic
   - [x] `pdf-extract` — utility
-- [ ] **Batch 2 — Needs sanitization:**
+  - [x] ~~`openclaw-backup`~~ — REMOVED (ClawHub origin, not modified)
+  - [x] ~~`openclaw-backup-optimized`~~ — REMOVED (ClawHub origin, not modified)
+  - [x] ~~`self-improving-agent`~~ — REMOVED (ClawHub origin, not modified)
+- [ ] **Batch 2 — Original skills, needs sanitization:**
   - [ ] `bookmarks` — remove Telegram-specific chat IDs
   - [ ] `beads` — check for Dolt-specific paths
   - [ ] `pass-secrets` — remove store paths, keep generic
@@ -35,11 +35,15 @@
   - [ ] `mcp-client` — check for personal server configs
   - [ ] `kimiim` — check for Kimi-specific group references
   - [ ] `kimi-webbridge-desktop` — check for installation paths
-  - [ ] `mulch` — check for domain config
   - [ ] `worker-safety` — check for personal safety rules
 - [ ] **Batch 3 — Heavy sanitization or skip:**
   - [ ] `kimi-desktop-gateway-policy` — very Kimi-specific
   - [ ] `image-handoff` — already shared with Cloudy, check for duplicates
+- [ ] **ClawHub skills (not migrated, available at clawhub.ai):**
+  - [ ] `openclaw-backup` — ClawHub v1.0.0
+  - [ ] `openclaw-backup-optimized` — ClawHub v1.0.1
+  - [ ] `self-improving-agent` — ClawHub v3.0.21
+  - [ ] `mulch` — ClawHub v1.0.5
 
 ## T4: Migrate Scripts (Sanitized)
 - [ ] `git-guardian.sh` — generic, useful

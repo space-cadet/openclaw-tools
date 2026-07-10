@@ -7,7 +7,7 @@
 - [x] Created reorganization plan in memory-bank
 
 ## In Progress
-- [x] Migrate Batch 1 skills (11 universal skills committed)
+- [x] Migrate Batch 1 skills (8 original skills committed, 3 removed: ClawHub origin)
 - [ ] Migrate Batch 2 skills (needs sanitization)
 - [ ] Migrate Batch 3 skills (heavy sanitization or skip)
 - [ ] Migrate scripts (batch 1: generic scripts)
