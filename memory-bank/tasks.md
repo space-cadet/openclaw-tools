@@ -27,18 +27,16 @@
   - [x] ~~`openclaw-backup`~~ — REMOVED (ClawHub origin, not modified)
   - [x] ~~`openclaw-backup-optimized`~~ — REMOVED (ClawHub origin, not modified)
   - [x] ~~`self-improving-agent`~~ — REMOVED (ClawHub origin, not modified)
-- [ ] **Batch 2 — Original skills, needs sanitization:**
-  - [ ] `bookmarks` — remove Telegram-specific chat IDs
-  - [ ] `beads` — check for Dolt-specific paths
-  - [ ] `pass-secrets` — remove store paths, keep generic
-  - [ ] `cloakbrowser-stealth` — check for hardcoded paths
-  - [ ] `mcp-client` — check for personal server configs
-  - [ ] `kimiim` — check for Kimi-specific group references
-  - [ ] `kimi-webbridge-desktop` — check for installation paths
-  - [ ] `worker-safety` — check for personal safety rules
+- [x] **Batch 2 — Original skills, needs sanitization:**
+  - [x] `bookmarks` — sanitized (removed Telegram-specific refs)
+  - [x] `beads` — sanitized (replaced specific projects with generic examples)
+  - [x] `pass-secrets` — sanitized (removed store paths, kept generic)
+  - [x] `cloakbrowser-stealth` — sanitized (fixed shebang, paths)
+  - [x] `mcp-client` — sanitized (replaced example paths)
+  - [x] `image-handoff` — sanitized (replaced personal name with "User")
 - [ ] **Batch 3 — Heavy sanitization or skip:**
-  - [ ] `kimi-desktop-gateway-policy` — very Kimi-specific
-  - [ ] `image-handoff` — already shared with Cloudy, check for duplicates
+  - [ ] `kimi-desktop-gateway-policy` — very Kimi-specific → **SKIP** (user request)
+  - [ ] `image-handoff` — moved to Batch 2, done ✅
 - [ ] **ClawHub skills (not migrated, available at clawhub.ai):**
   - [ ] `openclaw-backup` — ClawHub v1.0.0
   - [ ] `openclaw-backup-optimized` — ClawHub v1.0.1

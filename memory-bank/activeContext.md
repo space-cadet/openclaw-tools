@@ -13,7 +13,7 @@ Repo infrastructure: memory-bank setup, README, and reorganization plan.
 4. Start migrating sanitized scripts
 
 ## Open Questions
-- Should we keep `kimi-desktop-gateway-policy`? (Very Kimi-specific)
+- Should we keep `kimi-desktop-gateway-policy`? (Very Kimi-specific) → **SKIP per user**
 - Should we create a `skills-registry.json` for discoverability?
 - Should benchmarks keep their own memory-bank or use the repo-level one?
 

@@ -8,7 +8,7 @@
 
 ## In Progress
 - [x] Migrate Batch 1 skills (8 original skills committed, 3 removed: ClawHub origin)
-- [ ] Migrate Batch 2 skills (needs sanitization)
+- [x] Migrate Batch 2 skills (6 skills sanitized and committed)
 - [ ] Migrate Batch 3 skills (heavy sanitization or skip)
 - [ ] Migrate scripts (batch 1: generic scripts)
 - [ ] Set up token usage tracking
