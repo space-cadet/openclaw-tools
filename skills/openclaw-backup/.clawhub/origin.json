@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "registry": "https://clawhub.ai",
+  "slug": "openclaw-backup",
+  "installedVersion": "1.0.0",
+  "installedAt": 1783449309932,
+  "artifact": {
+    "kind": "archive",
+    "sha256": "c91efbc0dbf163effb2b260eefe1843e45f4527364857864f2a12f1ba6563f04",
+    "integrity": "sha256-yR77wNvxY+/7KyYO7+GEPkX0UnNkhXhk8qEvG6ZWPwQ="
+  },
+  "skillFile": {
+    "path": "SKILL.md",
+    "sha256": "7c2f64ebc1c36f34b7b03f125b0f12425839e7ebd7a622acb12616857fa01baa"
+  }
+}
