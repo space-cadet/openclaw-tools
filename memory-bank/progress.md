@@ -1,25 +1,38 @@
-# Progress: openclaw-tools
+# Progress: openclaw-tools Reorganization
 
-## Completed (2026-07-10)
-- [x] Renamed repo from `openclaw-tests` to `openclaw-tools`
-- [x] Cloned to `~/.openclaw/workspace/code/openclaw-tools/`
-- [x] Set up memory-bank v6.12 structure (projectbrief, tasks, activeContext, progress, implementation-details)
-- [x] Created reorganization plan in memory-bank
-- [x] Migrated Batch 1 skills (8 original skills: token-usage, red-team, mb-init, mb-text-workflow, mb-db-workflow, time-awareness, timer-build-monitor, pdf-extract)
-- [x] Removed 3 ClawHub-origin skills (self-improving-agent, openclaw-backup, openclaw-backup-optimized)
-- [x] Migrated Batch 2 skills (6 sanitized skills: image-handoff, bookmarks, pass-secrets, beads, cloakbrowser-stealth, mcp-client)
-- [x] Skipped Kimi-specific skills (kimiim, kimi-webbridge-desktop, kimi-desktop-gateway-policy, worker-safety)
-- [x] Enabled Telegram rich messages
+## Completed (2026-07-13)
+
+### T1: Repo Infrastructure ✅
+- Renamed from openclaw-tests
+- Memory-bank v6.12 set up
+- README.md, CONTRIBUTING.md, .gitignore all written
+
+### T3: Skills Migration ✅
+- **18 skills** in repo, all sanitized
+- 10 original + 4 from workspace (graph-memory, netstatus, protonvpn-openvpn, worker-safety)
+- All have SKILL.md + skill-card.md + _meta.json
+- skills-registry.json created for machine-readable index
+
+### T4: Scripts Migration ✅
+- **6 scripts** migrated with environment-based configuration
+- check-disk.sh, crash-recovery.sh, heartbeat-watchdog.sh, netstatus.sh, protonvpn.sh, security-update-check.sh
+- All use env vars for paths, no hardcoded personal references
+
+### T6: Documentation ✅
+- README.md with full skills index
+- CONTRIBUTING.md with sanitization checklist
+- .gitignore covering Node, Python, workspace artifacts, secrets
+- 18 skill-card.md files for quick reference
 
 ## In Progress
-- [ ] Migrate scripts (batch 1: generic scripts)
-- [ ] Write top-level README.md with skill index
-- [ ] Set up token usage tracking system (T5)
-- [ ] Write CONTRIBUTING.md
-- [ ] Add CI (optional)
+- T2: Benchmark verification (tests moved, not yet verified)
 
-## Pending
-- [ ] Migrate scripts (git-guardian.sh, daily-backup.sh, heartbeat-*.sh, etc.)
-- [ ] Set up token usage tracking (daily/weekly/monthly cron jobs)
-- [ ] Write CONTRIBUTING.md
-- [ ] Add GitHub Actions CI (optional)
+## Not Started
+- T5: Token usage tracking system (SQLite, cron jobs, dashboard)
+- GitHub Actions CI (optional)
+
+## Metrics
+- Skills: 18
+- Scripts: 6
+- Tests: 2 suites (kimi-benchmarks, subagent-tests)
+- Lines of documentation: ~3000 (README + CONTRIBUTING + skill-cards)
