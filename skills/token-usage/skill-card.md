@@ -1,36 +1,44 @@
-# Token Usage Tracker
+# token-usage — Skill Card
 
-Track, aggregate, and report OpenClaw token usage and costs across sessions.
+| Field | Value |
+|-------|-------|
+| **Name** | token-usage |
+| **Version** | — |
+| **One-liner** | Track, aggregate, and report OpenClaw token usage and costs across sessions. |
 
-## Features
+## Trigger
+- "How many tokens did I use today/this week?"
+- "What's my session cost?"
+- Budget monitoring or anomaly detection
 
-- Parse session JSONL files to extract per-message token usage
-- Aggregate by date, model, or cron job
-- Cost estimation with configurable pricing
-- JSON export for dashboards
-- Handles cacheRead correctly (excludes from totals)
-
-## Usage
+## Key Commands
 
 ```bash
-# Daily report
+# Today's usage
 python3 scripts/parse.py --today
 
 # Weekly report with costs
 python3 scripts/parse.py --week --costs
 
-# Per-cron-job breakdown
-python3 scripts/parse.py --week --by-cron
+# Weekly cron report (JSON)
+python3 scripts/parse.py --week --by-cron --costs --json
 
 # All-time by model
 python3 scripts/parse.py --all --by-model
 
-# JSON export
-python3 scripts/parse.py --week --json
+# Export to JSON
+python3 scripts/parse.py --week --json > /tmp/token-report.json
 ```
 
-## Files
+## Dependencies
+- Python 3
+- OpenClaw session JSONL files in `~/.openclaw/agents/*/sessions/`
+- `scripts/pricing.json` (user-editable)
 
-- `SKILL.md` — Skill definition
-- `scripts/parse.py` — Python parser
-- `scripts/pricing.json` — Model pricing (user-editable)
+## Quick Example
+
+```bash
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --week --costs
+```
+
+> Important: The script sums `input + output` tokens only. `totalTokens` includes `cacheRead` which would overcount if summed across messages.
