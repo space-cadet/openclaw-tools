@@ -8,8 +8,8 @@
 - README.md, CONTRIBUTING.md, .gitignore all written
 
 ### T3: Skills Migration ✅
-- **18 skills** in repo, all sanitized
-- 10 original + 4 from workspace (graph-memory, netstatus, protonvpn-openvpn, worker-safety)
+- **20 skills** in repo, all sanitized
+- 10 original + 4 from workspace (graph-memory, netstatus, protonvpn-openvpn, worker-safety) + 2 custom (openclaw-backup, openclaw-backup-optimized)
 - All have SKILL.md + skill-card.md + _meta.json
 - skills-registry.json created for machine-readable index
 
@@ -32,7 +32,7 @@
 - GitHub Actions CI (optional)
 
 ## Metrics
-- Skills: 18
+- Skills: 20
 - Scripts: 6
 - Tests: 2 suites (kimi-benchmarks, subagent-tests)
 - Lines of documentation: ~3000 (README + CONTRIBUTING + skill-cards)

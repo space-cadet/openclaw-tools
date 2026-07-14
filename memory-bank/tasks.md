@@ -24,9 +24,6 @@
   - [x] `time-awareness` — generic
   - [x] `timer-build-monitor` — generic
   - [x] `pdf-extract` — utility
-  - [x] ~~`openclaw-backup`~~ — REMOVED (ClawHub origin, not modified)
-  - [x] ~~`openclaw-backup-optimized`~~ — REMOVED (ClawHub origin, not modified)
-  - [x] ~~`self-improving-agent`~~ — REMOVED (ClawHub origin, not modified)
 - [x] **Batch 2 — Original skills, needs sanitization:**
   - [x] `bookmarks` — sanitized (removed Telegram-specific refs)
   - [x] `beads` — sanitized (replaced specific projects with generic examples)
@@ -39,6 +36,9 @@
   - [x] `netstatus` — network + gateway status
   - [x] `protonvpn-openvpn` — VPN management
   - [x] `worker-safety` — hard safety limits
+- [x] **Batch 4 — Custom skills added to repo (sanitized):**
+  - [x] `openclaw-backup` — simple tar-based backup with rotation
+  - [x] `openclaw-backup-optimized` — Node.js backup with workspace splitting, change tracking, Discord notifications
 - [x] **Skipped:**
   - [x] `kimi-desktop-gateway-policy` — very Kimi-specific → SKIP (user request)
   - [x] `self-improving-agent` — ClawHub origin v3.0.21, modified locally
