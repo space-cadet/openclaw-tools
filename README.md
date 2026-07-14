@@ -35,6 +35,8 @@ A public, shareable repository of OpenClaw skills, scripts, benchmarks, and util
 | `cloakbrowser-stealth` | Stealth browser automation using CloakBrowser |
 | `image-handoff` | Detect image generation requests and route them to an artist agent |
 | `mcp-client` | Spawn and interact with MCP (Model Context Protocol) servers |
+| `openclaw-backup` | Backup and restore OpenClaw data with automatic rotation |
+| `openclaw-backup-optimized` | Full snapshots with workspace splitting and change summaries |
 | `pass-secrets` | GPG-encrypted secrets storage via `pass` |
 | `pdf-extract` | Extract text, tables, and structured content from PDF files |
 | `time-awareness` | Current date/time rules |

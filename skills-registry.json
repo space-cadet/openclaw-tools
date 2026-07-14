@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-07-13T23:10:17Z",
+  "updated": "2026-07-14T12:58:00Z",
   "skills": [
     {"name": "beads", "version": "1.0.0", "category": "memory", "description": "Dolt-powered issue tracker for AI coding workflows", "hasScripts": false, "hasSkillCard": true},
     {"name": "bookmarks", "version": "1.0.0", "category": "memory", "description": "Save, list, search, and manage message bookmarks", "hasScripts": true, "hasSkillCard": true},
@@ -12,6 +12,8 @@
     {"name": "mb-text-workflow", "version": "1.0.0", "category": "memory", "description": "Update memory bank via markdown editing", "hasScripts": false, "hasSkillCard": true},
     {"name": "mcp-client", "version": "1.0.0", "category": "utility", "description": "Spawn and interact with MCP (Model Context Protocol) servers", "hasScripts": true, "hasSkillCard": true},
     {"name": "netstatus", "version": "1.0.0", "category": "network", "description": "Combined network + gateway status with VPN info, IP location, and system health", "hasScripts": false, "hasSkillCard": true},
+    {"name": "openclaw-backup", "version": "1.0.0", "category": "utility", "description": "Backup and restore OpenClaw data with automatic rotation", "hasScripts": true, "hasSkillCard": true},
+    {"name": "openclaw-backup-optimized", "version": "1.0.1", "category": "utility", "description": "Full snapshots with workspace splitting, change summaries, and restore instructions", "hasScripts": true, "hasSkillCard": true},
     {"name": "pass-secrets", "version": "1.0.0", "category": "security", "description": "Store and retrieve secrets using pass (password-store) with GPG encryption", "hasScripts": true, "hasSkillCard": true},
     {"name": "pdf-extract", "version": "1.0.0", "category": "utility", "description": "Extract text, tables, and structured content from PDF files", "hasScripts": false, "hasSkillCard": true},
     {"name": "protonvpn-openvpn", "version": "1.0.0", "category": "network", "description": "Manage ProtonVPN OpenVPN connections", "hasScripts": false, "hasSkillCard": true},
