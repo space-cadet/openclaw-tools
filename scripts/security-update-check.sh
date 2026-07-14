@@ -8,6 +8,7 @@
 # Environment:
 #   SECURITY_LOG_FILE — override log file path (default: /tmp/security-update-check.log)
 #   SECURITY_REPORT_FILE — override report output file
+#   SECURITY_TIMEZONE — override timezone (default: UTC)
 
 set -euo pipefail
 

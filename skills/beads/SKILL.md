@@ -32,7 +32,7 @@ Project labels map to directories via `.beads/project-dirs.json`:
 
 Example:
 ```bash
-cd /path/to/workspace && bd create "Integrate language translator" -p 1 -t feature -l my-project,auto -d "Allow users to view pages in regional Indian languages. Use Google Translate or similar widget."
+cd ~/.openclaw/workspace && bd create "Integrate language translator" -p 1 -t feature -l my-project,auto -d "Allow users to view pages in regional Indian languages. Use Google Translate or similar widget."
 ```
 
 **Executor-eligible tasks:** Add the `auto` label if the task can be safely executed by the cron executor without human review. Tasks requiring design decisions or major architecture changes should NOT have the `auto` label.
@@ -43,7 +43,7 @@ Always use `bd` with the workspace `.beads/` database. The workspace root is ini
 
 ### Add a task
 ```bash
-cd /path/to/workspace && bd create "Title" -p 1 -t task -l project-label
+cd ~/.openclaw/workspace && bd create "Title" -p 1 -t task -l project-label
 ```
 
 Priority levels: 0=critical, 1=high, 2=normal, 3=low
@@ -51,48 +51,48 @@ Types: task, bug, idea, feature, refactor, docs
 
 ### Add an idea or bug
 ```bash
-cd /path/to/workspace && bd create "Idea: something" -p 2 -t idea -l project-label
-cd /path/to/workspace && bd create "Bug: something broken" -p 0 -t bug -l project-label
+cd ~/.openclaw/workspace && bd create "Idea: something" -p 2 -t idea -l project-label
+cd ~/.openclaw/workspace && bd create "Bug: something broken" -p 0 -t bug -l project-label
 ```
 
 ### List ready (unblocked) work
 ```bash
-cd /path/to/workspace && bd ready
+cd ~/.openclaw/workspace && bd ready
 ```
 
 ### Show all issues
 ```bash
-cd /path/to/workspace && bd list
+cd ~/.openclaw/workspace && bd list
 ```
 
 ### Show specific issue
 ```bash
-cd /path/to/workspace && bd show <id>
+cd ~/.openclaw/workspace && bd show <id>
 ```
 
 ### Claim a task (mark in-progress)
 ```bash
-cd /path/to/workspace && bd update <id> --claim
+cd ~/.openclaw/workspace && bd update <id> --claim
 ```
 
 ### Close a task
 ```bash
-cd /path/to/workspace && bd close <id> --reason "Done"
+cd ~/.openclaw/workspace && bd close <id> --reason "Done"
 ```
 
 ### Add dependency
 ```bash
-cd /path/to/workspace && bd dep add <child> <parent>
+cd ~/.openclaw/workspace && bd dep add <child> <parent>
 ```
 
 ### Store a persistent memory/insight
 ```bash
-cd /path/to/workspace && bd remember "insight text"
+cd ~/.openclaw/workspace && bd remember "insight text"
 ```
 
 ### Get workflow context
 ```bash
-cd /path/to/workspace && bd prime
+cd ~/.openclaw/workspace && bd prime
 ```
 
 ## Workflow
