@@ -50,10 +50,17 @@ Or compact mode:
 
 The skill runs these checks in sequence:
 
-1. **VPN Interface**: `ip addr show tun0` — checks if tunnel exists
+1. **VPN Interface**: `ifconfig | grep -E "(tun|utun|ppp)"` — checks if tunnel exists (macOS/Linux)
 2. **IP Location**: `curl -s https://ipinfo.io/json` — gets country, city, IP, org
 3. **Gateway Status**: `openclaw gateway status` or read from runtime
-4. **System Uptime**: `uptime -p`
+4. **System Uptime**: `uptime` (parsed for macOS/Linux compatibility)
+
+## macOS vs Linux
+
+| Command | Linux | macOS |
+|---------|-------|-------|
+| VPN interface | `ip addr show tun0` | `ifconfig \| grep utun` |
+| Uptime parsing | `uptime -p` | `uptime` (raw output) |
 
 ## Error States
 
@@ -67,5 +74,5 @@ The skill runs these checks in sequence:
 
 - Uses `ipinfo.io` for geolocation (free tier, no auth needed)
 - Caches result for 30 seconds to avoid rate limits
-- Requires `curl`, `jq`, `ip` commands
-- Runs with sudo for `ip addr` if needed
+- Requires `curl`, `jq`, `ifconfig` (macOS) or `ip` (Linux)
+- VPN detection uses `utun` on macOS, `tun` on Linux
