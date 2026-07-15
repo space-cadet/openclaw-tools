@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Name** | token-usage |
-| **Version** | 2.0 |
+| **Version** | v1.1.0 |
 | **One-liner** | Track, aggregate, and report OpenClaw token usage with SQLite persistence. |
 
 ## Trigger
