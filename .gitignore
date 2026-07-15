@@ -43,6 +43,12 @@ venv.bak/
 .mulch/
 memory/
 
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
 # OS files
 .DS_Store
 .DS_Store?

@@ -20,7 +20,7 @@
 - All committed and pushed to main
 
 ### Next Focus
-T5: Token usage tracking system — the biggest remaining task.
+T5: Token usage tracking system — **now in progress** (2026-07-15). Building SQLite-based incremental ingestion, cron jobs, and rotation.
 
 ### Open Questions
 - Should tests/ have their own memory-bank or use repo-level one?

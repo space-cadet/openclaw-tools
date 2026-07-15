@@ -28,8 +28,13 @@
 - T2: Benchmark verification (tests moved, not yet verified)
 
 ## Not Started
-- T5: Token usage tracking system (SQLite, cron jobs, dashboard)
 - GitHub Actions CI (optional)
+
+## Completed (2026-07-15)
+- T5: Token Usage Tracking System — SQLite database, incremental ingestion, 4 cron jobs, rotation
+  - 6589 session files ingested on initialization
+  - Daily ingest + report, weekly report, monthly rotation
+  - 90-day daily retention, monthly summaries forever
 
 ## Metrics
 - Skills: 20
