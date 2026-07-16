@@ -7,7 +7,7 @@ license: MIT
 
 # Token Usage Tracker
 
-Track, aggregate, and report OpenClaw token usage and costs across sessions. Provides both ad-hoc reporting and automated daily/weekly cron-based tracking with SQLite persistence.
+Track, aggregate, and report OpenClaw token usage and costs across sessions. Provides both ad-hoc reporting and automated daily/weekly cron-based tracking.
 
 ## When to Use
 
@@ -18,9 +18,23 @@ Track, aggregate, and report OpenClaw token usage and costs across sessions. Pro
 
 ## Architecture
 
-### SQLite Database (Primary)
+The system provides two reporting approaches:
 
-The system uses incremental ingestion into SQLite for efficient querying:
+### Direct Parser (Primary — `parse.py`)
+
+Parses session JSONL files directly with no database required. This is the recommended approach for cron jobs and ad-hoc reporting.
+
+**Key features:**
+- No database setup — reads session files directly
+- Supports `--today`, `--yesterday`, `--week`, `--all`
+- Cost estimation with `--costs`
+- Cron job detection with `--by-cron`
+- JSON output with `--json`
+- Specific session files via `--sessions`
+
+### SQLite Database (`ingest.py` + `report.py`)
+
+Optional incremental ingestion into SQLite for advanced querying and long-term retention:
 
 ```
 usage.db
@@ -29,65 +43,73 @@ usage.db
 └── ingestion_log      — Tracks which session files have been processed
 ```
 
-**Key design:** Only new or modified session files are parsed on each run. This avoids re-parsing thousands of historical files every day.
-
-### Job Type Classification
-
-Sessions are classified as:
-- `user` — Interactive user sessions (no cron marker)
-- `cron:<name>` — Sessions triggered by cron jobs (detected via `[cron:...]` marker)
-- `background` — Background tasks (spawned without user trigger)
+**Use when:** you need SQL queries, long-term retention beyond session files, or custom dashboards.
 
 ## Commands
 
-### Initialize database (one-time)
-```bash
-cd skills/token-usage/scripts
-python3 ingest.py --init
-```
+### Direct Parser (Recommended)
 
-### Incremental ingestion (daily)
 ```bash
 cd skills/token-usage/scripts
-python3 ingest.py
-```
 
-### Yesterday's report (compact)
-```bash
-cd skills/token-usage/scripts
-python3 report.py --yesterday --compact
-```
+# Today's usage
+python3 parse.py --today --costs
 
-### Weekly report
-```bash
-cd skills/token-usage/scripts
-python3 report.py --week --compact
-```
+# Yesterday's usage (ideal for daily cron reports)
+python3 parse.py --yesterday --costs
 
-### Monthly report (includes rolled-up data)
-```bash
-cd skills/token-usage/scripts
-python3 report.py --month --compact
-```
-
-### Legacy: Parse sessions directly (no database)
-```bash
-cd skills/token-usage/scripts
-python3 parse.py --today
+# Weekly usage
 python3 parse.py --week --costs
-python3 parse.py --week --by-cron
+
+# All time, grouped by model
+python3 parse.py --all --by-model --costs
+
+# Weekly usage broken down by cron job
+python3 parse.py --week --by-cron --costs
+
+# JSON output for external dashboards
+python3 parse.py --week --json
+
+# Specific session files
+python3 parse.py --sessions /path/to/session1.jsonl /path/to/session2.jsonl --costs
+```
+
+### SQLite Database (Optional)
+
+```bash
+cd skills/token-usage/scripts
+
+# Initialize database (one-time)
+python3 ingest.py --init
+
+# Incremental ingestion (daily)
+python3 ingest.py
+
+# Yesterday's report (compact)
+python3 report.py --yesterday --compact
+
+# Weekly report
+python3 report.py --week --compact
+
+# Monthly report (includes rolled-up data)
+python3 report.py --month --compact
 ```
 
 ## Cron Jobs (Optional)
 
-The following cron jobs can be configured for automated tracking:
+The following cron jobs can be configured for automated tracking. These examples use the direct parser approach:
 
-| Job | Schedule | Purpose |
-|-----|----------|---------|
-| Daily Ingest | 04:00 local time | Incremental ingestion of new session files |
-| Daily Report | 09:05 local time | Yesterday's usage by job type |
-| Weekly Report | Monday 09:00 | 7-day trend + cost summary |
-| Monthly Rotation | 1st 00:05 | Roll up 90+ day data to monthly totals |
+| Job | Schedule | Command | Purpose |
+|-----|----------|---------|---------|
+| Daily Report | 04:00 local time | `parse.py --yesterday --costs` | Yesterday's usage by model |
+| Weekly Report | Monday 09:00 | `parse.py --week --costs` | 7-day trend + cost summary |
+
+For SQLite-based tracking, configure:
+| Job | Schedule | Command | Purpose |
+|-----|----------|---------|---------|
+| Daily Ingest | 04:00 local time | `ingest.py` | Incremental ingestion |
+| Daily Report | 09:05 local time | `report.py --yesterday --compact` | SQLite-based report |
+| Monthly Rotation | 1st 00:05 | `ingest.py --rotate` | Roll up 90+ day data |
 
 Configure paths to match your `openclaw-tools` installation location.
 
@@ -97,6 +119,13 @@ Sessions are stored as JSONL with lines like:
 ```json
 {"type":"message","message":{"role":"assistant",...},"usage":{"input":1000,"output":500,"totalTokens":1500},...}
 ```
+
+## Job Type Classification
+
+Sessions are classified as:
+- `user` — Interactive user sessions (no cron marker)
+- `cron:<name>` — Sessions triggered by cron jobs (detected via `[cron:...]` marker)
+- `background` — Background tasks (spawned without user trigger)
 
 ## Cost Estimation
 
@@ -114,7 +143,7 @@ The script reports **input + output tokens** as the usage metric. This is the ac
 
 The `totalTokens` field in session files includes `cacheRead` (cached context window), which gets re-counted at every turn. Summing `totalTokens` across messages would massively overcount — a 10K context used for 100 turns would appear as 1M tokens. The system avoids this by only summing `input` and `output`.
 
-## Retention Policy
+## Retention Policy (SQLite only)
 
 - **Daily granularity**: 90 days
 - **Monthly summaries**: Kept forever (rolled up from daily after 90 days)
@@ -124,9 +153,9 @@ The `totalTokens` field in session files includes `cacheRead` (cached context wi
 
 | File | Purpose |
 |------|---------|
+| `scripts/parse.py` | Direct parser (no database) — recommended for cron jobs |
 | `scripts/ingest.py` | Incremental ingestion into SQLite |
-| `scripts/report.py` | Daily/weekly/monthly report generation |
-| `scripts/parse.py` | Legacy direct parser (no database) |
+| `scripts/report.py` | SQLite-based daily/weekly/monthly reports |
 | `scripts/pricing.json` | Model pricing configuration |
 | `scripts/usage.db` | SQLite database (created at init) |
 

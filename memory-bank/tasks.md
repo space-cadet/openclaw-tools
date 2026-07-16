@@ -57,45 +57,36 @@
 - [x] **Skip**: `start-gateway*.sh` (specific to setup)
 - [x] **Skip**: `beads-executor-check.sh`, `moltbook-*.sh`, `game-center-health-check.sh` (too specific)
 
-## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15)
+## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15) — Phase 5: parse.py Enhancement (2026-07-16)
 - [x] **Phase 1: SQLite Database + Incremental Ingestion**
-  - [x] Create `usage.db` schema: `daily_totals`, `monthly_totals`, `ingestion_log`
-  - [x] Create `ingest.py` — incremental ingestion (only new/modified session files)
-  - [x] Session classification: `user` (interactive), `cron:<job_name>`, `background`
-  - [x] Update `pricing.json` with `kimi/k2.7` and `kimi/k2.7-code` entries
 - [x] **Phase 2: Cron Jobs**
-  - [x] Daily ingest (04:00 IST) — job `ff9371fc-ead1-44b1-a30e-b03794bd8512`
-  - [x] Daily report (09:05 IST) — job `d39279ae-f544-4b04-8901-6e4059002017`
-  - [x] Weekly report (Monday 09:00 IST) — job `ad99af39-465f-4251-beea-8efed9a16f96`
 - [x] **Phase 3: Rotation & Retention**
-  - [x] Daily granularity: 90 days retention
-  - [x] Monthly rollup: forever (aggregated)
-  - [x] Vacuum after monthly rotation
-  - [x] Monthly rotation cron (1st 00:05) — job `2e2e3337-adce-4848-90f8-1d19992585f0`
 - [x] **Phase 4: Dashboard/Reporting**
-  - [x] Text-based report for Telegram (`report.py --compact`)
-  - [ ] Optional: HTML dashboard (extend later)
+- [x] **Phase 5: Direct Parser Enhancement**
+  - [x] Add `--yesterday` flag to `parse.py` for daily cron reports
+  - [x] Update `SKILL.md` — document both direct parser (recommended) and SQLite (optional) approaches
+  - [x] Update `skill-card.md` — v1.2.0 with new commands and examples
+  - [x] Switch workspace cron jobs to use `parse.py` (accurate, no DB overhead)
+  - [x] Keep SQLite tools available for advanced use cases (SQL queries, long-term retention)
 
-### Files Created
-- `skills/token-usage/scripts/ingest.py` — incremental ingestion into SQLite
-- `skills/token-usage/scripts/report.py` — daily/weekly/monthly reports
-- `skills/token-usage/scripts/pricing.json` — model pricing config (updated)
-- `skills/token-usage/scripts/usage.db` — SQLite database (initialized, 6589 files ingested)
+### Design Decisions (Updated 2026-07-16)
+- **Direct parser is primary for cron jobs**: `parse.py` reads session JSONL directly, produces accurate numbers without SQLite overhead
+- **SQLite remains available**: For advanced querying, dashboards, and long-term retention beyond session files
+- **Cost accuracy**: parse.py produces consistent cost estimates ($1.61 vs SQLite's $6.20 for same day — the SQLite approach had classification/aggregation issues)
+- **No breaking changes**: Existing `ingest.py`/`report.py` users unaffected; new `--yesterday` flag is additive
 
-### Cron Jobs
-| Job | Schedule | ID | Purpose |
-|-----|----------|-----|---------|
-| Token Usage — Daily Ingest | 04:00 IST daily | `ff9371fc-...` | Ingest new session files |
-| Token Usage — Daily Report | 09:05 IST daily | `d39279ae-...` | Yesterday's usage report |
-| Token Usage — Weekly Report | Monday 09:00 IST | `ad99af39-...` | 7-day trend |
-| Token Usage — Monthly Rotation | 1st 00:05 IST | `2e2e3337-...` | Roll up 90+ day data |
+### Files Created/Modified
+- `skills/token-usage/scripts/parse.py` — Added `--yesterday` flag (+5 lines)
+- `skills/token-usage/SKILL.md` — Rewrote to document both approaches
+- `skills/token-usage/skill-card.md` — Updated to v1.2.0
 
-### Design Decisions
-- **Incremental not full re-parse**: `ingest.py` tracks processed files in `ingestion_log`
-- **SQLite over JSONL**: Queryable, fast aggregations, handles gzipped sessions
-- **Job type detection**: Regex on first user message (`[cron:...]`) for cron; absence for user; `bg:` in session key for background
-- **Pricing**: per-1M-token rates, read from `pricing.json` (overridable)
-- **Retention**: Daily data → 90 days, then rolled to monthly. Monthly summaries kept forever.
+### Cron Jobs (Workspace — Updated 2026-07-16)
+| Job | Schedule | Tool | Purpose |
+|-----|----------|------|---------|
+| Token Usage — Daily Report | 04:00 IST daily | `parse.py --yesterday --costs` | Yesterday's usage by model |
+| Token Usage — Weekly Report | Monday 09:00 IST | `parse.py --week --costs` | 7-day trend + cost summary |
+
+(Previous SQLite-based cron jobs disabled — see T5 Phase 2 history)
 
 ## T6: Documentation & Polish ✅ COMPLETE
 - [x] Each skill: SKILL.md with usage

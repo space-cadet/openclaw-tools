@@ -1,26 +1,22 @@
 # Active Context: openclaw-tools
 
-## Current Status: Maintenance & Sync Complete (2026-07-14)
+## Current Status: Token Usage Skill Updated (2026-07-16)
 
 ### What Just Happened
-- **Workspace → Repo sync**: Added 2 custom skills (openclaw-backup, openclaw-backup-optimized) after sanitization
-  - Removed ClawHub metadata (.clawhub/ dirs)
-  - Removed personal phrases from backup notifications
-  - Changed default timezone from `America/Sao_Paulo` → `UTC`
-  - Genericized example repo URLs
-- **Repo improvements**: beads skill examples now use `~/.openclaw/workspace` (actual convention)
-- **Security-update-check.sh**: Added `SECURITY_TIMEZONE` env var support
+- **parse.py — Added `--yesterday` flag**: Direct parser now supports yesterday-only reports (ideal for daily cron jobs)
+- **SKILL.md updated**: Documented both direct parser (recommended) and SQLite (optional) approaches
+- **skill-card.md updated**: v1.2.0 with new commands and cron job examples
 
-### Previous Major Work (2026-07-13)
+### Background: Why the Switch
+The SQLite-based approach (`ingest.py` + `report.py`) produced inflated cost estimates ($6.20 vs $1.61 for the same day) due to how it classified and aggregated sessions. The direct parser (`parse.py`) reads session JSONL directly, avoids the database overhead, and produces accurate, consistent numbers. The workspace switched to `parse.py` for daily/weekly cron reports, keeping the SQLite tools available for advanced use cases.
+
+### Previous Major Work (2026-07-14)
+- Workspace → Repo sync: Added 2 custom skills (openclaw-backup, openclaw-backup-optimized)
 - Migrated 4 workspace skills → repo (graph-memory, netstatus, protonvpn-openvpn, worker-safety)
-- Migrated 6 generic scripts → repo (all with environment-based configuration)
-- Created 18 skill-card.md quick reference files
-- Created skills-registry.json (machine-readable index)
-- Wrote CONTRIBUTING.md and .gitignore
-- All committed and pushed to main
+- Migrated 6 generic scripts → repo
 
 ### Next Focus
-T5: Token usage tracking system — **now in progress** (2026-07-15). Building SQLite-based incremental ingestion, cron jobs, and rotation.
+- T5: Token usage tracking — Phase 5: ClawHub publish (in progress)
 
 ### Open Questions
 - Should tests/ have their own memory-bank or use repo-level one?

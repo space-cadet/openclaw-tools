@@ -30,6 +30,14 @@
 ## Not Started
 - GitHub Actions CI (optional)
 
+## Completed (2026-07-16)
+- **T5 Phase 5: parse.py Enhancement**
+  - Added `--yesterday` flag to `parse.py` (+5 lines)
+  - Updated `SKILL.md` — documented both direct parser (recommended) and SQLite (optional) approaches
+  - Updated `skill-card.md` to v1.2.0 with new commands and examples
+  - Workspace cron jobs switched to `parse.py` (accurate, no DB overhead)
+  - SQLite tools (`ingest.py`, `report.py`) remain available for advanced use cases
+
 ## Completed (2026-07-15)
 - T5: Token Usage Tracking System — SQLite database, incremental ingestion, 4 cron jobs, rotation
   - 6589 session files ingested on initialization

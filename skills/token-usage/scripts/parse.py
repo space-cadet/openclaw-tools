@@ -290,6 +290,7 @@ def to_cron_json(by_day_job, pricing=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Track OpenClaw token usage")
+    parser.add_argument("--yesterday", action="store_true", help="Report for yesterday only")
     parser.add_argument("--today", action="store_true", help="Report for today only")
     parser.add_argument("--week", action="store_true", help="Report for last 7 days")
     parser.add_argument("--all", action="store_true", help="Report all time")
@@ -306,6 +307,10 @@ def main():
     
     if args.today:
         since = now.strftime("%Y-%m-%dT00:00:00")
+    elif args.yesterday:
+        yesterday = now - timedelta(days=1)
+        since = yesterday.strftime("%Y-%m-%dT00:00:00")
+        until = now.strftime("%Y-%m-%dT00:00:00")
     elif args.week:
         since = (now - timedelta(days=7)).strftime("%Y-%m-%dT00:00:00")
     elif not args.all:
