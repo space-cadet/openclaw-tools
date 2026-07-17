@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-07-14T12:58:00Z",
+  "skills": [
+    {"name": "beads", "version": "1.0.0", "category": "memory", "description": "Dolt-powered issue tracker for AI coding workflows", "hasScripts": false, "hasSkillCard": true},
+    {"name": "bookmarks", "version": "1.0.0", "category": "memory", "description": "Save, list, search, and manage message bookmarks", "hasScripts": true, "hasSkillCard": true},
+    {"name": "cloakbrowser-stealth", "version": "1.0.0", "category": "utility", "description": "Stealth browser automation using CloakBrowser to bypass bot detection", "hasScripts": true, "hasSkillCard": true},
+    {"name": "graph-memory", "version": "1.0.0", "category": "memory", "description": "Query the agent's knowledge graph for entities, relationships, and statistics", "hasScripts": true, "hasSkillCard": true},
+    {"name": "image-handoff", "version": "1.0.0", "category": "utility", "description": "Detect image generation requests and route them to an artist agent", "hasScripts": false, "hasSkillCard": true},
+    {"name": "mb-db-workflow", "version": "1.0.0", "category": "memory", "description": "Update memory bank via SQLite + markdown regeneration", "hasScripts": false, "hasSkillCard": true},
+    {"name": "mb-init", "version": "1.0.0", "category": "memory", "description": "Initialize a memory bank for a new or existing project", "hasScripts": false, "hasSkillCard": true},
+    {"name": "mb-text-workflow", "version": "1.0.0", "category": "memory", "description": "Update memory bank via markdown editing", "hasScripts": false, "hasSkillCard": true},
+    {"name": "mcp-client", "version": "1.0.0", "category": "utility", "description": "Spawn and interact with MCP (Model Context Protocol) servers", "hasScripts": true, "hasSkillCard": true},
+    {"name": "netstatus", "version": "1.0.0", "category": "network", "description": "Combined network + gateway status with VPN info, IP location, and system health", "hasScripts": false, "hasSkillCard": true},
+    {"name": "openclaw-backup", "version": "1.0.0", "category": "utility", "description": "Backup and restore OpenClaw data with automatic rotation", "hasScripts": true, "hasSkillCard": true},
+    {"name": "openclaw-backup-optimized", "version": "1.0.1", "category": "utility", "description": "Full snapshots with workspace splitting, change summaries, and restore instructions", "hasScripts": true, "hasSkillCard": true},
+    {"name": "pass-secrets", "version": "1.0.0", "category": "security", "description": "Store and retrieve secrets using pass (password-store) with GPG encryption", "hasScripts": true, "hasSkillCard": true},
+    {"name": "pdf-extract", "version": "1.0.0", "category": "utility", "description": "Extract text, tables, and structured content from PDF files", "hasScripts": false, "hasSkillCard": true},
+    {"name": "protonvpn-openvpn", "version": "1.0.0", "category": "network", "description": "Manage ProtonVPN OpenVPN connections", "hasScripts": false, "hasSkillCard": true},
+    {"name": "red-team", "version": "1.0.0", "category": "security", "description": "Red-team protocol for validating numerical claims before promoting them", "hasScripts": false, "hasSkillCard": true},
+    {"name": "time-awareness", "version": "1.0.0", "category": "monitoring", "description": "Current date/time rules — MUST call session_status before any relative-time query", "hasScripts": false, "hasSkillCard": true},
+    {"name": "timer-build-monitor", "version": "1.0.0", "category": "monitoring", "description": "Minimal timer skill for one-shot async checks (build monitoring, long-running tasks)", "hasScripts": true, "hasSkillCard": true},
+    {"name": "token-usage", "version": "2.0.0", "category": "monitoring", "description": "Track, aggregate, and report OpenClaw token usage with SQLite persistence and cron automation", "hasScripts": true, "hasSkillCard": true},
+    {"name": "worker-safety", "version": "1.0.0", "category": "security", "description": "Hard safety limits for AI agent operations — apply unconditionally", "hasScripts": false, "hasSkillCard": true}
+  ]
+}
