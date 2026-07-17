@@ -96,7 +96,23 @@
 - [x] skills-registry.json: machine-readable skill index
 - [ ] Add GitHub Actions CI (optional, for tests)
 
-## Blocked / Decisions
-- [x] **Decision**: `kimi-desktop-gateway-policy` → SKIP
-- [x] **Decision**: `skills-registry.json` → YES, created
-- [ ] **Decision**: Should tests/ have their own memory-bank or use repo-level one?
+## T7: K3 Benchmark (2026-07-17) ✅ COMPLETE
+- [x] Run LISP interpreter test — 14/14 (100%), perfect score
+- [x] Run subagent stress tests — 4/5 PASS, 1 PARTIAL (nested subagents blocked by design)
+- [x] Compare with K2.6 (8/11) and K2.7 Code (10/11) results
+- [x] Save interpreter.py and results.md to tests/kimi-benchmarks/k3/
+- [x] Push to repo
+
+### Results
+| Test | K2.6 | K2.7 Code | K3 |
+|------|------|-----------|-----|
+| LISP Interpreter | 8/11 (72.7%) | 10/11 (90.9%) | **14/14 (100%)** |
+| Basic Spawn | — | — | ✅ PASS |
+| Tool Access | — | — | ✅ PASS |
+| Model Override | — | — | ⚠️ PARTIAL (nested blocked) |
+| Parallel Spawn | — | — | ✅ PASS |
+| Timeout Stress | — | — | ✅ PASS |
+
+### Key Finding
+K3 is a significantly better coder than K2.7 and K2.6. Subagent spawning works reliably at depth 1. Nested subagents (depth > 1) are blocked by the runtime as a safety guardrail.
+

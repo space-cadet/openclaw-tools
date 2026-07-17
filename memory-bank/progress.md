@@ -30,6 +30,13 @@
 ## Not Started
 - GitHub Actions CI (optional)
 
+## Completed (2026-07-17)
+- **T7: K3 Benchmark**
+  - LISP interpreter: 14/14 (100%) — perfect score, no bugs
+  - Subagent tests: 4/5 PASS, 1 PARTIAL (nested subagents blocked by design)
+  - K3 outperforms K2.7 Code (10/11) and K2.6 (8/11)
+  - Results saved to `tests/kimi-benchmarks/k3/`
+
 ## Completed (2026-07-16)
 - **T5 Phase 5: parse.py Enhancement**
   - Added `--yesterday` flag to `parse.py` (+5 lines)
