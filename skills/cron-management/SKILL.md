@@ -57,6 +57,49 @@ Add to the beginning of the message text:
 If /tmp/cron-paused exists, reply NO_REPLY and exit.
 ```
 
+**For Python scripts:**
+```python
+import os
+import sys
+from datetime import datetime
+
+PAUSE_FILE = "/tmp/cron-paused"
+SKIP_LOG = "/tmp/cron-skipped.log"
+
+def check_maintenance_mode():
+    if os.path.exists(PAUSE_FILE):
+        with open(SKIP_LOG, "a") as f:
+            f.write(f"{datetime.now().isoformat()} — {sys.argv[0]} skipped (maintenance mode)\n")
+        sys.exit(0)
+
+check_maintenance_mode()
+```
+
+**For Node.js scripts:**
+```javascript
+const fs = require('fs');
+const path = require('path');
+
+const PAUSE_FILE = '/tmp/cron-paused';
+const SKIP_LOG = '/tmp/cron-skipped.log';
+
+function checkMaintenanceMode() {
+  if (fs.existsSync(PAUSE_FILE)) {
+    const entry = `${new Date().toISOString()} — ${path.basename(process.argv[1])} skipped (maintenance mode)\n`;
+    fs.appendFileSync(SKIP_LOG, entry);
+    process.exit(0);
+  }
+}
+
+checkMaintenanceMode();
+```
+
+## Rollout Strategy
+
+1. **New jobs**: Include maintenance check from the start
+2. **Existing jobs**: Update incrementally, starting with most frequent (every 30 min, hourly)
+3. **Verification**: Enable maintenance mode, wait for next trigger, check `/tmp/cron-skipped.log`
+
 ## Health Dashboard
 
 `cronctl status` shows:
@@ -84,3 +127,12 @@ cronctl resume-all
 # Check why a job keeps failing
 cronctl health graph-memory-queue-sync
 ```
+
+## Implementation Details
+
+See `memory-bank/implementation-details/cron-management.md` for:
+- Architecture (two-layer design)
+- Rollout strategy
+- Error handling
+- State files and security
+- Future enhancements

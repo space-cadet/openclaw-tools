@@ -132,6 +132,11 @@ K3 is a significantly better coder than K2.7 and K2.6. Subagent spawning works r
 - `cronctl status` — health dashboard with failing/disabled/overdue counts
 - `cronctl health <name>` — detailed run history and diagnostics
 
+### Integration Guide Added
+- Shell scripts, Python, Node.js examples for maintenance mode checks
+- Rollout strategy for existing jobs
+- `memory-bank/implementation-details/cron-management.md` with full architecture
+
 ### Why This Exists
 OpenClaw has no built-in `enable`/`disable` command for cron jobs. The user had to manually disable 12+ jobs during a billing issue. This skill provides:
 1. **Structured CLI** — no more raw JSON patches
