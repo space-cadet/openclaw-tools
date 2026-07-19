@@ -1,17 +1,19 @@
 # Active Context: openclaw-tools
 
-## Current Status: K3 Benchmark Complete (2026-07-17)
+## Current Status: Cron Management Skill Added (2026-07-20)
 
 ### What Just Happened
-- **K3 LISP Interpreter Test**: 14/14 (100%) — perfect score, no bugs found
-- **K3 Subagent Stress Tests**: 4/5 PASS, 1 PARTIAL
-  - Basic spawn ✅, Tool access ✅, Parallel spawn ✅, Timeout stress ✅
-  - Model override ⚠️ — spawn mechanism works, but nested subagents (depth > 1) blocked by runtime guardrail
-- **Results saved**: `tests/kimi-benchmarks/k3/interpreter.py` + `results.md`
-- **Comparison**: K3 > K2.7 Code (10/11) > K2.6 (8/11)
+- **Created `cron-management` skill** — CLI tool for managing OpenClaw cron jobs
+- **Script**: `skills/cron-management/scripts/cronctl.sh`
+  - `list`, `status`, `pause`, `resume`, `pause-all`, `resume-all`
+  - `maintenance on|off` — emergency stop via `/tmp/cron-paused` flag
+  - `health <name>` — detailed run history and diagnostics
+- **Tested**: All commands verified against live cron jobs (22 jobs)
+- **Added to repo**: SKILL.md, _meta.json, skill-card.md, cronctl.sh
 
-### Previous Major Work (2026-07-16)
-- T5 Phase 5: parse.py enhancement — added `--yesterday` flag, updated docs
+### Previous Major Work
+- T7 (2026-07-17): K3 Benchmark — LISP interpreter 14/14, subagent tests 4/5
+- T5 Phase 5 (2026-07-16): parse.py enhancement — added `--yesterday` flag
 
 ### Next Focus
 - T2: Benchmark verification (tests moved, not yet verified post-move)

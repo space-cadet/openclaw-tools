@@ -116,3 +116,26 @@
 ### Key Finding
 K3 is a significantly better coder than K2.7 and K2.6. Subagent spawning works reliably at depth 1. Nested subagents (depth > 1) are blocked by the runtime as a safety guardrail.
 
+## T8: Cron Management Skill (2026-07-20) ✅ COMPLETE
+- [x] Create `cron-management` skill with SKILL.md, _meta.json, skill-card.md
+- [x] Create `scripts/cronctl.sh` — CLI for listing, pausing, resuming, maintenance mode
+- [x] Test all commands: list, status, pause, resume, pause-all, resume-all, maintenance, health
+- [x] Update skills-registry.json
+- [x] Update memory-bank (activeContext, progress, tasks)
+- [x] Push to repo
+
+### Features
+- `cronctl list` — show all jobs with ✅/❌ status
+- `cronctl pause <name>` / `cronctl resume <name>` — single job toggle
+- `cronctl pause-all` / `cronctl resume-all` — bulk operations
+- `cronctl maintenance on|off` — emergency stop via `/tmp/cron-paused` flag
+- `cronctl status` — health dashboard with failing/disabled/overdue counts
+- `cronctl health <name>` — detailed run history and diagnostics
+
+### Why This Exists
+OpenClaw has no built-in `enable`/`disable` command for cron jobs. The user had to manually disable 12+ jobs during a billing issue. This skill provides:
+1. **Structured CLI** — no more raw JSON patches
+2. **Bulk operations** — pause/resume all at once
+3. **Maintenance mode** — works even if OpenClaw is down
+4. **Health visibility** — see failures without digging through individual job states
+

@@ -30,6 +30,12 @@
 ## Not Started
 - GitHub Actions CI (optional)
 
+## Completed (2026-07-20)
+- **T8: Cron Management Skill**
+  - 21st skill added to repo
+  - Solves the "no simple toggle" problem for OpenClaw cron jobs
+  - Maintenance mode flag works even when OpenClaw is down
+
 ## Completed (2026-07-17)
 - **T7: K3 Benchmark**
   - LISP interpreter: 14/14 (100%) — perfect score, no bugs
@@ -52,7 +58,7 @@
   - 90-day daily retention, monthly summaries forever
 
 ## Metrics
-- Skills: 20
-- Scripts: 6
+- Skills: 21
+- Scripts: 7 (+ cronctl.sh)
 - Tests: 2 suites (kimi-benchmarks, subagent-tests)
-- Lines of documentation: ~3000 (README + CONTRIBUTING + skill-cards)
+- Lines of documentation: ~3200 (+ cron-management skill docs)
