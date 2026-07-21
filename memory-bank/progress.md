@@ -1,13 +1,35 @@
 # Progress: openclaw-tools Reorganization
 
 ## Completed (2026-07-21)
-- **Documented `agent-knowledge` ClawHub skill**
-  - Created `skills/knowledge/SKILL.md` with usage, data model, QMD integration docs
-  - Updated `README.md` skills index
-  - Audit: 5 ClawHub skills installed, all now documented in repo
-  - Committed: `61a8ded`
 
-## Completed (2026-07-13)
+### Token-Usage v2.1.0 Update
+- Enhanced `skills/token-usage/scripts/parse.py` with rolling time windows
+  - `--hours N` — rolling N-hour window
+  - `--since` / `--until` — ISO timestamps, dates, or relative (`1d`, `2h`, `30m`)
+  - `--days N` — last N calendar days
+  - `--yesterday` — single calendar day
+  - `--cache` — include cache read/write columns
+  - `--session-detail` — per-session breakdown with models
+  - Mtime filtering for performance (skips unmodified files)
+- Updated `SKILL.md` with v2.1.0 documentation
+- Updated `skills-registry.json` — token-usage version 2.1.0
+- Commits: `7bc7ede`, `88cc111`
+
+### Knowledge Skill Documentation
+- Documented `agent-knowledge` ClawHub skill in repo
+- Created `skills/knowledge/SKILL.md` with usage, data model, QMD integration docs
+- Updated `README.md` skills index
+- Audit: 5 ClawHub skills installed, all now documented
+- Commit: `61a8ded`
+
+## Completed (2026-07-20)
+
+### Cron Management Skill (T8)
+- Created `skills/cron-management/` with SKILL.md, skill-card.md, _meta.json
+- Created `scripts/cronctl.sh` — CLI for listing, pausing, resuming, maintenance mode
+- Tested all commands: list, status, pause, resume, pause-all, resume-all, maintenance, health
+- Updated skills-registry.json
+- Commit: `a1d3b8f`
 
 ### T1: Repo Infrastructure ✅
 - Renamed from openclaw-tests

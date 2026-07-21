@@ -57,7 +57,7 @@
 - [x] **Skip**: `start-gateway*.sh` (specific to setup)
 - [x] **Skip**: `beads-executor-check.sh`, `moltbook-*.sh`, `game-center-health-check.sh` (too specific)
 
-## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15) — Phase 5: parse.py Enhancement (2026-07-16)
+## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15) — Phase 5: parse.py Enhancement (2026-07-16) — v2.1.0 Rolling Windows (2026-07-21)
 - [x] **Phase 1: SQLite Database + Incremental Ingestion**
 - [x] **Phase 2: Cron Jobs**
 - [x] **Phase 3: Rotation & Retention**
@@ -68,6 +68,16 @@
   - [x] Update `skill-card.md` — v1.2.0 with new commands and examples
   - [x] Switch workspace cron jobs to use `parse.py` (accurate, no DB overhead)
   - [x] Keep SQLite tools available for advanced use cases (SQL queries, long-term retention)
+- [x] **v2.1.0: Rolling Time Windows & Performance**
+  - [x] Add `--hours N` — rolling N-hour window
+  - [x] Add `--since` / `--until` — ISO timestamps, dates, or relative (`1d`, `2h`, `30m`)
+  - [x] Add `--days N` — last N calendar days
+  - [x] Add `--cache` — include cache read/write columns
+  - [x] Add `--session-detail` — per-session breakdown with models
+  - [x] Mtime filtering — skips files not modified within time window (critical with 7,269 session files)
+  - [x] Update `SKILL.md` — v2.1.0 documentation
+  - [x] Update `skills-registry.json` — version 2.1.0
+  - [x] Commits: `7bc7ede`, `88cc111`
 
 ### Design Decisions (Updated 2026-07-16)
 - **Direct parser is primary for cron jobs**: `parse.py` reads session JSONL directly, produces accurate numbers without SQLite overhead
