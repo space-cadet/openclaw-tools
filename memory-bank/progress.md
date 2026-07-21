@@ -1,5 +1,12 @@
 # Progress: openclaw-tools Reorganization
 
+## Completed (2026-07-21)
+- **Documented `agent-knowledge` ClawHub skill**
+  - Created `skills/knowledge/SKILL.md` with usage, data model, QMD integration docs
+  - Updated `README.md` skills index
+  - Audit: 5 ClawHub skills installed, all now documented in repo
+  - Committed: `61a8ded`
+
 ## Completed (2026-07-13)
 
 ### T1: Repo Infrastructure ✅
@@ -58,7 +65,7 @@
   - 90-day daily retention, monthly summaries forever
 
 ## Metrics
-- Skills: 21
+- Skills: 21 (+ knowledge, + cron-management)
 - Scripts: 7 (+ cronctl.sh)
 - Tests: 2 suites (kimi-benchmarks, subagent-tests)
-- Lines of documentation: ~3200 (+ cron-management skill docs)
+- Lines of documentation: ~3200 (README + CONTRIBUTING + skill-cards)
