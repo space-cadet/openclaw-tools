@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|-------|
 | **Name** | token-usage |
-| **Version** | v1.2.0 |
+| **Version** | v2.1.0 |
 | **One-liner** | Track, aggregate, and report OpenClaw token usage and costs across sessions. |
 
 ## Trigger
-- "How many tokens did I use today/this week?"
+- "How many tokens did I use today/this week/past 24 hours?"
 - "What's my session cost?"
 - Budget monitoring or anomaly detection
 
@@ -15,18 +15,31 @@
 
 **Two approaches:**
 
-1. **Direct Parser (`parse.py`)** — Recommended for cron jobs. No database setup. Reads session JSONL directly.
+1. **Direct Parser (`parse.py`)** — Recommended for cron jobs. No database setup. Reads session JSONL directly. Supports rolling time windows (`--hours`, `--since`, `--until`).
 2. **SQLite Database (`ingest.py` + `report.py`)** — Optional. Incremental ingestion, long-term retention, SQL queries.
 
 ## Key Commands
 
 ### Direct Parser (Recommended)
 ```bash
+# Past N hours (rolling window)
+cd scripts && python3 parse.py --hours 24 --by-model --costs
+
+# Since a specific time
+cd scripts && python3 parse.py --since "2026-07-20T09:00:00" --by-model --costs
+
+# Relative time shorthand
+cd scripts && python3 parse.py --since 2d --by-model --costs
+cd scripts && python3 parse.py --since 30m --by-model --costs
+
 # Yesterday's usage (ideal for daily cron)
 cd scripts && python3 parse.py --yesterday --costs
 
 # Today's usage
 cd scripts && python3 parse.py --today --costs
+
+# Last N days
+cd scripts && python3 parse.py --days 3 --by-model --costs
 
 # Weekly usage
 cd scripts && python3 parse.py --week --costs
@@ -36,6 +49,12 @@ cd scripts && python3 parse.py --all --by-model --costs
 
 # By cron job
 cd scripts && python3 parse.py --week --by-cron --costs
+
+# Include cache columns
+cd scripts && python3 parse.py --today --cache --costs
+
+# Per-session detail
+cd scripts && python3 parse.py --today --session-detail --costs
 
 # JSON output
 cd scripts && python3 parse.py --week --json
@@ -54,6 +73,17 @@ cd scripts && python3 report.py --yesterday --compact
 cd scripts && python3 report.py --week --compact
 cd scripts && python3 report.py --month --compact
 ```
+
+## New in v2.1.0
+
+| Feature | Flag | Description |
+|---------|------|-------------|
+| Rolling windows | `--hours N` | Last N hours (e.g., `--hours 24`) |
+| Arbitrary ranges | `--since`, `--until` | ISO timestamps, dates, or relative (`2d`, `1h`, `30m`) |
+| Day ranges | `--days N` | Last N calendar days |
+| Cache tracking | `--cache` | Include cacheRead/cacheWrite columns |
+| Session detail | `--session-detail` | Per-session breakdown with models |
+| Performance | mtime filtering | Skips unmodified files when `--since` is used (critical for 7000+ files) |
 
 ## Cron Jobs (Direct Parser — Recommended)
 
@@ -86,25 +116,30 @@ cd scripts && python3 report.py --month --compact
 
 ```bash
 cd skills/token-usage/scripts
-python3 parse.py --yesterday --costs
+python3 parse.py --hours 24 --by-model --costs
 ```
 
 Output:
 ```
-## 2026-07-15
-  k2.7                        in= 2,111,110  out= 251,931  msgs=1062
-                              est. $1.5594
-  k2.7-code                   in=    93,323  out=   1,693  msgs=  12
-                              est. $0.0500
-  Day total                   in= 2,204,433  out= 253,624  msgs=1150
-                                est. $1.6095
-
-## Grand Total
-  input=2,204,433  output=253,624  messages=1,150
-  est. cost=$1.6095
+## Past 24 Hours (2026-07-20 10:15 → 2026-07-21 10:15 UTC)
+  kimi/k3                     in=  152,834  out=  12,419  msgs=  42
+                              est. $0.1013
+  kimi/k2.7                   in=  893,221  out=  78,432  msgs= 156
+                              est. $0.6035
+  kimi/k2.7-code              in=   12,445  out=     892  msgs=   3
+                              est. $0.0080
+  Period total                in=1,058,500  out=  91,743  msgs= 201
+                                est. $0.7128
 ```
 
 > Important: The system sums `input + output` tokens only. `totalTokens` includes `cacheRead` which would overcount if summed across messages.
+
+## Session File Management
+
+With 7000+ session files, reports can slow down. Tips:
+- Use `--since` / `--hours` — mtime filtering skips unmodified files automatically
+- Compress old sessions: `find *.jsonl -mtime +30 -exec gzip {} \;`
+- The parser handles `.jsonl.gz` transparently
 
 ## Retention (SQLite only)
 - Daily: 90 days → rolled to monthly

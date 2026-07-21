@@ -1,13 +1,13 @@
 ---
 name: token-usage
 description: "Track, aggregate, and report OpenClaw token usage and costs across sessions."
-homepage: https://github.com/space-cadet/openclaw-tools/tree/main/skills/token-usage
+homepage: https://github.com/space-cadet/openclaw-token-usage
 license: MIT
 ---
 
 # Token Usage Tracker
 
-Track, aggregate, and report OpenClaw token usage and costs across sessions. Provides both ad-hoc reporting and automated daily/weekly cron-based tracking.
+Parse OpenClaw session JSONL files to extract token usage, aggregate by date/model/session, and generate cost reports.
 
 ## When to Use
 
@@ -16,102 +16,71 @@ Track, aggregate, and report OpenClaw token usage and costs across sessions. Pro
 - Budget monitoring and anomaly detection
 - Before/after optimization comparisons
 
-## Architecture
+## Workflow
 
-The system provides two reporting approaches:
-
-### Direct Parser (Primary — `parse.py`)
-
-Parses session JSONL files directly with no database required. This is the recommended approach for cron jobs and ad-hoc reporting.
-
-**Key features:**
-- No database setup — reads session files directly
-- Supports `--today`, `--yesterday`, `--week`, `--all`
-- Cost estimation with `--costs`
-- Cron job detection with `--by-cron`
-- JSON output with `--json`
-- Specific session files via `--sessions`
-
-### SQLite Database (`ingest.py` + `report.py`)
-
-Optional incremental ingestion into SQLite for advanced querying and long-term retention:
-
-```
-usage.db
-├── daily_totals       — Aggregated by date, model, job_type
-├── monthly_totals     — Rolled-up summaries (90+ day old data)
-└── ingestion_log      — Tracks which session files have been processed
-```
-
-**Use when:** you need SQL queries, long-term retention beyond session files, or custom dashboards.
+1. **Locate sessions** — Find `.jsonl` files in `~/.openclaw/agents/*/sessions/`
+2. **Parse usage** — Extract `input`, `output`, `cacheRead`, `cacheWrite`, `totalTokens` from each assistant message
+3. **Aggregate** — Group by date, model, session ID
+4. **Report** — Output summaries, trends, cost estimates
 
 ## Commands
 
-### Direct Parser (Recommended)
+### Time Period Selection
 
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--today` | Current calendar day (UTC) | `--today` |
+| `--yesterday` | Previous calendar day | `--yesterday` |
+| `--week` | Last 7 calendar days | `--week` |
+| `--days N` | Last N calendar days | `--days 3` |
+| `--hours N` | Rolling window: last N hours | `--hours 24` |
+| `--since TIME` | Start time (ISO, date, or relative) | `--since 24h`, `--since 2d`, `--since "2026-07-20T09:00:00"` |
+| `--until TIME` | End time (ISO, date, or relative) | `--until 1h` |
+| `--all` | All time | `--all` |
+
+**Relative time shorthand:** `1h` = 1 hour ago, `2d` = 2 days ago, `30m` = 30 minutes ago.
+
+### Report by Model (with costs)
 ```bash
-cd skills/token-usage/scripts
+# Past 24 hours, model breakdown with cost estimates
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --hours 24 --by-model --costs
 
-# Today's usage
-python3 parse.py --today --costs
+# Today so far
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --today --by-model --costs
 
-# Yesterday's usage (ideal for daily cron reports)
-python3 parse.py --yesterday --costs
+# Yesterday
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --yesterday --by-model --costs
 
-# Weekly usage
-python3 parse.py --week --costs
+# Since a specific time
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --since "2026-07-20T09:00:00" --by-model --costs
 
-# All time, grouped by model
-python3 parse.py --all --by-model --costs
-
-# Weekly usage broken down by cron job
-python3 parse.py --week --by-cron --costs
-
-# JSON output for external dashboards
-python3 parse.py --week --json
-
-# Specific session files
-python3 parse.py --sessions /path/to/session1.jsonl /path/to/session2.jsonl --costs
+# Last 2 hours
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --since 2h --by-model --costs
 ```
 
-### SQLite Database (Optional)
-
+### Report by Cron Job (daily breakdown per job)
 ```bash
-cd skills/token-usage/scripts
-
-# Initialize database (one-time)
-python3 ingest.py --init
-
-# Incremental ingestion (daily)
-python3 ingest.py
-
-# Yesterday's report (compact)
-python3 report.py --yesterday --compact
-
-# Weekly report
-python3 report.py --week --compact
-
-# Monthly report (includes rolled-up data)
-python3 report.py --month --compact
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --week --by-cron
 ```
 
-## Cron Jobs (Optional)
+### All-time summary by model
+```bash
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --all --by-model
+```
 
-The following cron jobs can be configured for automated tracking. These examples use the direct parser approach:
+### Export to JSON for external dashboards
+```bash
+python3 ~/.openclaw/skills/token-usage/scripts/parse.py --week --json > /tmp/token-report.json
+```
 
-| Job | Schedule | Command | Purpose |
-|-----|----------|---------|---------|
-| Daily Report | 04:00 local time | `parse.py --yesterday --costs` | Yesterday's usage by model |
-| Weekly Report | Monday 09:00 | `parse.py --week --costs` | 7-day trend + cost summary |
+### Additional Output Options
 
-For SQLite-based tracking, configure:
-| Job | Schedule | Command | Purpose |
-|-----|----------|---------|---------|
-| Daily Ingest | 04:00 local time | `ingest.py` | Incremental ingestion |
-| Daily Report | 09:05 local time | `report.py --yesterday --compact` | SQLite-based report |
-| Monthly Rotation | 1st 00:05 | `ingest.py --rotate` | Roll up 90+ day data |
-
-Configure paths to match your `openclaw-tools` installation location.
+| Flag | Description |
+|------|-------------|
+| `--cache` | Include cache read/write columns in report |
+| `--session-detail` | Show per-session breakdown with models used |
+| `--json` | Output machine-readable JSON |
+| `--costs` | Add cost estimates (requires pricing data) |
 
 ## Data Format
 
@@ -120,48 +89,59 @@ Sessions are stored as JSONL with lines like:
 {"type":"message","message":{"role":"assistant",...},"usage":{"input":1000,"output":500,"totalTokens":1500},...}
 ```
 
-## Job Type Classification
-
-Sessions are classified as:
-- `user` — Interactive user sessions (no cron marker)
-- `cron:<name>` — Sessions triggered by cron jobs (detected via `[cron:...]` marker)
-- `background` — Background tasks (spawned without user trigger)
-
 ## Cost Estimation
 
 Uses model pricing from `scripts/pricing.json` (user-editable). Default prices:
-- Kimi k2.7: $0.50/1M input, $2.00/1M output
-- Kimi k2.7-code: $0.50/1M input, $2.00/1M output
-- Claude Sonnet 4.5: $3.00/1M input, $15.00/1M output
+- Kimi k2.7 / k3 / k2.7-code: $0.50/1M input, $2.00/1M output
+- Claude Sonnet 4: $3.00/1M input, $15.00/1M output
 - GPT-4o: $2.50/1M input, $10.00/1M output
 
 Costs are approximate. Cache read/write pricing applied when available.
+
+## Session File Management
+
+Session files accumulate over time. The `~/.openclaw/agents/main/sessions/` directory can grow to several GB with thousands of files, slowing down reports.
+
+**Current usage check:**
+```bash
+# Total size and file count
+du -sh ~/.openclaw/agents/main/sessions/
+ls ~/.openclaw/agents/main/sessions/*.jsonl | wc -l
+
+# Size by month (to identify heavy periods)
+ls -l ~/.openclaw/agents/main/sessions/*.jsonl | awk '
+  {month = substr($6, 1, 3); year = $8; size += $5; count++}
+  END {printf "Total: %.2f MB across %d files\n", size/1024/1024, count}'
+```
+
+**Archiving old sessions:**
+```bash
+# Compress sessions older than 30 days (preserves access, saves ~80% space)
+find ~/.openclaw/agents/main/sessions/*.jsonl -mtime +30 -exec gzip {} \;
+
+# Move very old sessions to archive (after verifying no longer needed)
+mkdir -p ~/.openclaw/agents/main/sessions/archive
+find ~/.openclaw/agents/main/sessions/*.jsonl -mtime +90 -exec mv {} ~/.openclaw/agents/main/sessions/archive/ \;
+```
+
+**Note:** The parser already skips `.trajectory.jsonl` and temp files, and uses mtime filtering to skip unmodified files when `--since` is specified.
 
 ## Important: What "Total" Means
 
 The script reports **input + output tokens** as the usage metric. This is the actual new token consumption per turn.
 
-The `totalTokens` field in session files includes `cacheRead` (cached context window), which gets re-counted at every turn. Summing `totalTokens` across messages would massively overcount — a 10K context used for 100 turns would appear as 1M tokens. The system avoids this by only summing `input` and `output`.
+The `totalTokens` field in session files includes `cacheRead` (cached context window), which gets re-counted at every turn. Summing `totalTokens` across messages would massively overcount — a 10K context used for 100 turns would appear as 1M tokens. The script avoids this by only summing `input` and `output`.
 
-## Retention Policy (SQLite only)
+## Output Locations
 
-- **Daily granularity**: 90 days
-- **Monthly summaries**: Kept forever (rolled up from daily after 90 days)
-- **Raw session files**: Managed by OpenClaw's session compression (`.jsonl` → `.jsonl.gz` after 3 days)
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `scripts/parse.py` | Direct parser (no database) — recommended for cron jobs |
-| `scripts/ingest.py` | Incremental ingestion into SQLite |
-| `scripts/report.py` | SQLite-based daily/weekly/monthly reports |
-| `scripts/pricing.json` | Model pricing configuration |
-| `scripts/usage.db` | SQLite database (created at init) |
+- Daily summaries: `~/.openclaw/skills/token-usage/logs/YYYY-MM-DD.md`
+- Weekly reports: `~/.openclaw/skills/token-usage/logs/week-YYYY-Www.md`
+- Raw JSON exports: user-specified or `/tmp/token-usage-*.json`
 
 ## Limitations
 
 - Only parses assistant messages with `usage` fields (OpenClaw 2026.5+ format)
 - Historical sessions before JSONL format not supported
 - Costs are estimates; actual billing may differ
-- Cron job paths must be configured to match your installation directory
+- `--today` uses UTC midnight boundary, not local timezone
+- With many session files (7000+), first run may take 10-30 seconds; subsequent runs with `--since` are fast due to mtime filtering
