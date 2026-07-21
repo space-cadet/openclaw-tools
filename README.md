@@ -23,6 +23,7 @@ A public, shareable repository of OpenClaw skills, scripts, benchmarks, and util
 | `beads` | Dolt-powered issue tracker for AI coding workflows |
 | `bookmarks` | Save, list, search, and manage message bookmarks |
 | `graph-memory` | Query the agent's knowledge graph for entities and relationships |
+| `knowledge` *(ClawHub)* | Unified knowledge capture and retrieval for URLs, extracts, posts, research |
 | `mb-init` | Initialize a memory bank for a new project |
 | `mb-text-workflow` | Update memory bank via markdown editing |
 | `mb-db-workflow` | Update memory bank via SQLite + markdown regeneration |
