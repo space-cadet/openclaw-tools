@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Name** | token-usage |
-| **Version** | v2.1.0 |
+| **Version** | v2.2.0 |
 | **One-liner** | Track, aggregate, and report OpenClaw token usage and costs across sessions. |
 
 ## Trigger

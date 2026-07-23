@@ -3,7 +3,7 @@ name: token-usage
 description: "Track, aggregate, and report OpenClaw token usage and costs across sessions."
 homepage: https://github.com/space-cadet/openclaw-tools/tree/main/skills/token-usage
 license: MIT
-version: "2.1.0"
+version: "2.2.0"
 ---
 
 # Token Usage Tracker
