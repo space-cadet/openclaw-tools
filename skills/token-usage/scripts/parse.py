@@ -221,10 +221,10 @@ def estimate_cost(usage, model, pricing):
     """Estimate cost in USD. Prices are per 1M tokens."""
     p = pricing.get(model, pricing.get("kimi/k2.7", {}))
     cost = 0.0
-    cost += usage.get("input", 0) * p.get("input", 0) / 1e6
-    cost += usage.get("output", 0) * p.get("output", 0) / 1e6
-    cost += usage.get("cacheRead", 0) * p.get("cache_read", 0) / 1e6
-    cost += usage.get("cacheWrite", 0) * p.get("cache_write", 0) / 1e6
+    cost += usage.get("input", 0) * (p.get("input") or 0) / 1e6
+    cost += usage.get("output", 0) * (p.get("output") or 0) / 1e6
+    cost += usage.get("cacheRead", 0) * (p.get("cache_read") or 0) / 1e6
+    cost += usage.get("cacheWrite", 0) * (p.get("cache_write") or 0) / 1e6
     return cost
 
 
