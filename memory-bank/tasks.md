@@ -57,7 +57,7 @@
 - [x] **Skip**: `start-gateway*.sh` (specific to setup)
 - [x] **Skip**: `beads-executor-check.sh`, `moltbook-*.sh`, `game-center-health-check.sh` (too specific)
 
-## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15) — Phase 5: parse.py Enhancement (2026-07-16) — v2.1.0 Rolling Windows (2026-07-21)
+## T5: Token Usage Tracking System ✅ COMPLETE (2026-07-15) — Phase 5: parse.py Enhancement (2026-07-16) — v2.1.0 Rolling Windows (2026-07-21) — v2.2.0 Multi-Source Pricing (2026-07-23)
 - [x] **Phase 1: SQLite Database + Incremental Ingestion**
 - [x] **Phase 2: Cron Jobs**
 - [x] **Phase 3: Rotation & Retention**
@@ -78,12 +78,20 @@
   - [x] Update `SKILL.md` — v2.1.0 documentation
   - [x] Update `skills-registry.json` — version 2.1.0
   - [x] Commits: `7bc7ede`, `88cc111`
+- [x] **v2.2.0: Multi-Source Pricing & Model Registry**
+  - [x] Create `update-pricing.py` — fetch from OpenRouter API + Moonshot direct docs
+  - [x] Create `registry.json` — model metadata with availability, provider, context windows
+  - [x] Add CNY→USD conversion for Moonshot pricing (7.2 rate)
+  - [x] Fix `parse.py` None cache pricing bug (TypeError)
+  - [x] Integrate pricing refresh into weekly cron
+  - [x] Commit: `37f65af`
 
-### Design Decisions (Updated 2026-07-16)
+### Design Decisions (Updated 2026-07-23)
 - **Direct parser is primary for cron jobs**: `parse.py` reads session JSONL directly, produces accurate numbers without SQLite overhead
 - **SQLite remains available**: For advanced querying, dashboards, and long-term retention beyond session files
 - **Cost accuracy**: parse.py produces consistent cost estimates ($1.61 vs SQLite's $6.20 for same day — the SQLite approach had classification/aggregation issues)
-- **No breaking changes**: Existing `ingest.py`/`report.py` users unaffected; new `--yesterday` flag is additive
+- **Multi-source pricing**: Moonshot direct rates take priority for Kimi models (most accurate), OpenRouter as fallback + comparison
+- **No breaking changes**: Existing `ingest.py`/`report.py` users unaffected
 
 ### Files Created/Modified
 - `skills/token-usage/scripts/parse.py` — Added `--yesterday` flag (+5 lines)

@@ -1,5 +1,17 @@
 # Progress: openclaw-tools Reorganization
 
+## Completed (2026-07-23)
+
+### Token-Usage v2.2.0: Multi-Source Pricing & Model Registry
+- **Created `update-pricing.py`** — multi-source pricing fetcher
+  - OpenRouter API: 342 models with per-token pricing
+  - Moonshot direct: scraped from platform.kimi.com/docs/pricing/, CNY→USD conversion
+  - Output: `pricing.json` + `registry.json` with metadata
+  - Price comparison: OpenRouter markup vs direct (K3: +8%, K2.7-code: +9%, K2.6: -24%)
+- **Fixed `parse.py`**: None cache pricing TypeError bug
+- **Updated weekly cron**: pricing refresh runs before report generation
+- **Commit**: `37f65af`
+
 ## Completed (2026-07-21)
 
 ### Token-Usage v2.1.0 Update
