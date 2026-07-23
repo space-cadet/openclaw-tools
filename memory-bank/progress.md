@@ -10,6 +10,7 @@
   - Price comparison: OpenRouter markup vs direct (K3: +8%, K2.7-code: +9%, K2.6: -24%)
 - **Fixed `parse.py`**: None cache pricing TypeError bug
 - **Updated weekly cron**: pricing refresh runs before report generation
+- **ClawHub published**: v2.2.4 live (latest tag, 307 downloads)
 - **Commit**: `37f65af`
 
 ## Completed (2026-07-21)

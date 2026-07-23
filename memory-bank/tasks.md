@@ -84,6 +84,8 @@
   - [x] Add CNY→USD conversion for Moonshot pricing (7.2 rate)
   - [x] Fix `parse.py` None cache pricing bug (TypeError)
   - [x] Integrate pricing refresh into weekly cron
+  - [x] Update version to 2.2.0 in `skills-registry.json`, `SKILL.md`, `skill-card.md`
+  - [x] **ClawHub publish**: v2.2.4 live (latest tag, 307 downloads)
   - [x] Commit: `37f65af`
 
 ### Design Decisions (Updated 2026-07-23)

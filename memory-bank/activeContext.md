@@ -10,6 +10,7 @@
   - Compares sources: OpenRouter vs direct (e.g., K3: $2.78/M vs $3.00/M — ~8% markup)
 - **Fixed `parse.py` bug**: None cache pricing caused TypeError in cost estimation
 - **Updated weekly cron**: Token Usage — Weekly Report now refreshes pricing before generating report
+- **ClawHub published**: v2.2.4 live (latest tag, 307 downloads) — multi-source pricing with OpenRouter + Moonshot direct
 - **Committed**: `37f65af` on main
 
 ### Previous Major Work (2026-07-21)
