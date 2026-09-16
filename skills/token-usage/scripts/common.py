@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -74,6 +75,7 @@ def find_sessions():
         if root.exists():
             files.extend(root.rglob("*.jsonl"))
             files.extend(root.rglob("*.jsonl.gz"))
+            files.extend(root.rglob("*.jsonl.*.zst"))
     return sorted(set(files))
 
 
@@ -81,9 +83,26 @@ def _model_from_context(payload):
     return payload.get("model", "") or ""
 
 
+def _zstd_open(path, mode="rt", encoding="utf-8", errors="replace"):
+    """Open a zstd-compressed file for text reading via subprocess."""
+    import io
+    proc = subprocess.Popen(
+        ["zstd", "-dc", str(path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    return io.TextIOWrapper(proc.stdout, encoding=encoding, errors=errors)
+
+
 def parse_session(path):
     """Yield timestamp, normalized model, and per-turn token usage."""
-    opener = gzip.open if str(path).endswith(".gz") else open
+    path_str = str(path)
+    if path_str.endswith(".zst"):
+        opener = _zstd_open
+    elif path_str.endswith(".gz"):
+        opener = gzip.open
+    else:
+        opener = open
     codex_model = ""
     try:
         with opener(path, "rt", encoding="utf-8", errors="replace") as stream:
@@ -99,7 +118,7 @@ def parse_session(path):
                     payload = record.get("payload", {})
                     if payload.get("type") != "token_count":
                         continue
-                    usage = payload.get("info", {}).get("last_token_usage") or {}
+                    usage = (payload.get("info") or {}).get("last_token_usage") or {}
                     if usage:
                         yield record.get("timestamp", ""), normalize_model(codex_model or "openai/gpt-5.6-luna"), {
                             "input": usage.get("input_tokens", 0),

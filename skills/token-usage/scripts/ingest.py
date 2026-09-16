@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from datetime import datetime, timezone
 from collections import defaultdict
-from common import find_sessions as find_shared_sessions, parse_session as parse_shared_session, normalize_model, estimate_cost as estimate_shared_cost, local_date
+from common import find_sessions as find_shared_sessions, parse_session as parse_shared_session, normalize_model, estimate_cost as estimate_shared_cost, local_date, _zstd_open
 
 DB_PATH = Path(__file__).parent / "usage.db"
 SESSION_PATHS = [
@@ -81,8 +81,17 @@ def find_sessions():
 
 
 def classify_session(path):
-    """Return job_type: 'user', 'cron:<name>', or 'background'."""
-    open_fn = gzip.open if str(path).endswith(".gz") else open
+    """Return job_type: 'user', 'cron:<name>', 'background:codex', or 'background'."""
+    path_str = str(path)
+    # Codex app-server rollouts are always background work, not user sessions.
+    if "codex-home/sessions" in path_str:
+        return "background:codex"
+    if path_str.endswith(".zst"):
+        open_fn = _zstd_open
+    elif path_str.endswith(".gz"):
+        open_fn = gzip.open
+    else:
+        open_fn = open
     try:
         with open_fn(path, "rt", encoding="utf-8", errors="replace") as f:
             for line in f:

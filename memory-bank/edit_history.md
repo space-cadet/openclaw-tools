@@ -1,7 +1,21 @@
 # Edit History
 
 *Created: 2026-09-02 18:52 IST*
-*Last Updated: 2026-09-02 18:52 IST*
+*Last Updated: 2026-09-16 11:17:45 IST*
+
+### 2026-09-16
+
+#### 11:17:45 IST - T14: Token-usage parser — zstd support + Codex/interactive split
+
+- Modified `skills/token-usage/scripts/common.py` - Added `*.jsonl.*.zst` glob, `_zstd_open()` helper, Cloudy's defensive fix for `"info": null`
+- Modified `skills/token-usage/scripts/ingest.py` - Added `background:codex` classification, `.zst` opener in `classify_session()`
+- Created `skills/token-usage/README.md` - Architecture, data sources, known issues
+- Created `memory-bank/tasks/T15.md` - Full task documentation
+- Modified `memory-bank/tasks.md` - Added T14 to registry
+
+**Verification:** 17 zstd sessions parsed (all k2.7), 5,598 files ingested, Sept 14–15 now visible, Codex split confirmed in DB
+
+### 2026-09-02
 
 ## 2026-09-02
 
