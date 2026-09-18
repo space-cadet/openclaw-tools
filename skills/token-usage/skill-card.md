@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Name** | token-usage |
-| **Version** | v2.5.0 |
+| **Version** | v2.5.1 |
 | **One-liner** | Track, aggregate, and report OpenClaw token usage and costs across sessions. |
 
 ## Trigger
@@ -73,6 +73,15 @@ cd scripts && python3 report.py --yesterday --compact
 cd scripts && python3 report.py --week --compact
 cd scripts && python3 report.py --month --compact
 ```
+
+## New in v2.5.1
+- **IST timezone restored**: session/SQLite timestamps convert UTC→IST before filtering and day-bucketing (T16's `Z`-strip compared raw UTC against IST boundaries, silently dropping 00:00–05:30 IST from `--today`)
+- **CLI flags restored**: `--hours`, `--days`, `--since`, `--until`, `--cache`, `--session-detail` work again (T16 removed them while SKILL.md still documented them)
+- **Per-model cron pricing**: cron reports price each job by the model it actually ran (T16 hardcoded `kimi/k2.7` for all cron tokens, mispricing Luna/k3 jobs)
+- **Version gate fix**: tuple compare `(2026, 9)` — 2027.x no longer misclassified as pre-9.x
+- **Double-count guard**: SQLite merged only when the classifier says it's a live backend; signature dedupe for transitional JSONL+SQLite installs
+- **Cache costs real**: report/JSON cost estimates use actual cacheRead/cacheWrite (were zeroed); grand-total cacheRead accumulates
+- **Boundary semantics**: `--until` exclusive again, matching pre-T16 behaviour
 
 ## New in v2.5.0
 - **9.x SQLite backend**: auto-detects OpenClaw version and reads `openclaw-agent.sqlite → transcript_events` for live data
