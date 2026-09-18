@@ -8,7 +8,6 @@ import subprocess
 import contextlib
 import sqlite3
 import tempfile
-import shutil
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -122,8 +121,9 @@ def detect_storage_backends():
     warnings = []
 
     if version_mm:
-        major, minor = version_mm
-        if major >= 2026 and minor >= 9:
+        # 9.x or later: (major, minor) tuple compare — a naive
+        # `major >= 2026 and minor >= 9` misclassifies 2027.x as pre-9.x.
+        if version_mm >= (2026, 9):
             # 9.x: SQLite is the primary live backend, JSONL may still exist
             # for older rotated sessions.
             if sqlite_dbs and not loose_jsonl:
@@ -305,18 +305,25 @@ def _snapshot_sqlite(db_path):
         return None
 
 def _normalise_ts(ts):
-    """Return a comparable string for a timestamp.
+    """Convert an ISO-8601 timestamp to a naive local (IST) string.
 
-    Session files store UTC timestamps with a 'Z' suffix (e.g.
-    '2026-09-18T15:06:59.778Z'). The --since / --until boundaries are local
-    IST strings without the suffix. To make string comparison meaningful we
-    strip the 'Z' so both sides are naive local-ish strings. This is a
-    pragmatic upper-bound filter — the aggregate_sqlite and parse_session_file
-    loops do the same.
+    Session files and the SQLite backend store UTC timestamps with a 'Z'
+    suffix (e.g. '2026-09-18T15:06:59.778Z'). The --since / --until
+    boundaries are local IST strings, and day buckets must follow IST
+    midnights (the standing "all timestamps in IST" reporting rule).
+    So we convert UTC -> IST and drop tzinfo, matching the pre-9.x
+    local_timestamp()/local_date() behaviour. Unparseable timestamps are
+    returned as-is so string comparison never crashes.
     """
     if not ts:
         return ""
-    return ts.replace("Z", "")
+    try:
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(LOCAL_TZ).replace(tzinfo=None).isoformat(timespec="seconds")
+    except ValueError:
+        return ts
 
 
 def parse_sqlite_transcripts(db_path, since=None, until=None):
@@ -368,7 +375,7 @@ def aggregate_sqlite(since=None, until=None):
         for ts, model, usage in parse_sqlite_transcripts(db, since, until):
             if since and ts < since:
                 continue
-            if until and ts > until:
+            if until and ts >= until:
                 continue
             day = ts[:10] if ts else "unknown"
             key = model or "unknown"
@@ -410,7 +417,7 @@ def parse_session_file(path):
                         usage = info.get("last_token_usage") or {}
                         if usage:
                             yield (
-                                msg.get("timestamp", ""),
+                                _normalise_ts(msg.get("timestamp", "")),
                                 codex_model or "openai/gpt-5.6-luna",
                                 {
                                     "input": usage.get("input_tokens", 0),
@@ -468,7 +475,7 @@ def aggregate(sessions, since=None, until=None):
         for ts, model, usage in parse_session_file(spath):
             if since and ts < since:
                 continue
-            if until and ts > until:
+            if until and ts >= until:
                 continue
             day = ts[:10] if ts else "unknown"
             model_key = model or "unknown"
@@ -530,7 +537,7 @@ def detect_cron_job(path):
 def aggregate_by_cron(sessions, since=None, until=None):
     """Aggregate token usage by cron job and date."""
     by_day_job = defaultdict(lambda: {
-        "input": 0, "output": 0, "messages": 0, "name": ""
+        "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "name": "", "models": {}
     })
     
     for spath in sessions:
@@ -540,17 +547,27 @@ def aggregate_by_cron(sessions, since=None, until=None):
         for ts, model, usage in parse_session_file(spath):
             if since and ts < since:
                 continue
-            if until and ts > until:
+            if until and ts >= until:
                 continue
             day = ts[:10] if ts else "unknown"
             key = f"{day}:{job_id}"
             
             inp = usage.get("input", 0)
             out = usage.get("output", 0)
+            cache_read = usage.get("cacheRead", 0)
+            cache_write = usage.get("cacheWrite", 0)
+            model_key = model or "unknown"
             
             by_day_job[key]["input"] += inp
             by_day_job[key]["output"] += out
+            by_day_job[key]["cacheRead"] += cache_read
+            by_day_job[key]["cacheWrite"] += cache_write
             by_day_job[key]["messages"] += 1
+            model_data = by_day_job[key]["models"].setdefault(model_key, {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0})
+            model_data["input"] += inp
+            model_data["output"] += out
+            model_data["cacheRead"] += cache_read
+            model_data["cacheWrite"] += cache_write
             if job_name and not by_day_job[key]["name"]:
                 by_day_job[key]["name"] = job_name
     
@@ -584,7 +601,7 @@ def format_report(by_day, by_session, pricing=None, costs=False):
         day_total = {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "cost": 0.0}
         for model in sorted(by_day[day].keys()):
             u = by_day[day][model]
-            usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": 0, "cacheWrite": 0}
+            usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": u["cacheRead"], "cacheWrite": u["cacheWrite"]}
             c = estimate_cost(usage_for_cost, model, pricing) if (costs and pricing) else 0.0
             lines.append(f"  {model:30s}  in={u['input']:>10,}  out={u['output']:>8,}  cache={u['cacheRead']:>8,}  msgs={u['messages']:>4}")
             if costs and pricing:
@@ -592,7 +609,7 @@ def format_report(by_day, by_session, pricing=None, costs=False):
             for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
                 day_total[k] += u[k]
             day_total["cost"] += c
-            for k in ["input", "output", "messages"]:
+            for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
                 total[k] += u[k]
             total["cost"] += c
         lines.append(f"  {'Day total':30s}  in={day_total['input']:>10,}  out={day_total['output']:>8,}  cache={day_total['cacheRead']:>8,}  msgs={day_total['messages']:>4}")
@@ -608,7 +625,7 @@ def format_report(by_day, by_session, pricing=None, costs=False):
 
 def format_cron_report(by_day_job, pricing=None, costs=False):
     lines = []
-    total = {"input": 0, "output": 0, "messages": 0, "cost": 0.0}
+    total = {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "cost": 0.0}
     
     days = defaultdict(dict)
     for key, data in by_day_job.items():
@@ -617,7 +634,7 @@ def format_cron_report(by_day_job, pricing=None, costs=False):
     
     for day in sorted(days.keys(), reverse=True):
         lines.append(f"\n## {day}")
-        day_total = {"input": 0, "output": 0, "messages": 0, "cost": 0.0}
+        day_total = {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "cost": 0.0}
         
         jobs = sorted(days[day].items(), 
                      key=lambda x: x[1]["input"] + x[1]["output"], 
@@ -628,17 +645,21 @@ def format_cron_report(by_day_job, pricing=None, costs=False):
             if len(name) > 28:
                 name = name[:25] + "..."
             
-            usage_for_cost = {"input": data["input"], "output": data["output"], "cacheRead": 0, "cacheWrite": 0}
-            c = estimate_cost(usage_for_cost, "kimi/k2.7", pricing) if (costs and pricing) else 0.0
+            # Cost per model, not a blanket kimi/k2.7 rate — cron jobs run
+            # Luna, k3, k2.7-code etc., and mispricing them skews reports.
+            c = 0.0
+            if costs and pricing:
+                for model, usage in data.get("models", {}).items():
+                    c += estimate_cost(usage, model, pricing)
             
-            lines.append(f"  {name:<28}  calls={data['messages']:>4}  in={data['input']:>10,}  out={data['output']:>8,}")
+            lines.append(f"  {name:<28}  calls={data['messages']:>4}  in={data['input']:>10,}  out={data['output']:>8,}  cache={data['cacheRead'] + data['cacheWrite']:>8,}")
             if costs and pricing:
                 lines.append(f"{'':34s}est. ${c:.4f}")
             
-            for k in ["input", "output", "messages"]:
+            for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
                 day_total[k] += data[k]
             day_total["cost"] += c
-            for k in ["input", "output", "messages"]:
+            for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
                 total[k] += data[k]
             total["cost"] += c
         
@@ -647,7 +668,7 @@ def format_cron_report(by_day_job, pricing=None, costs=False):
             lines.append(f"  {'':34s}est. ${day_total['cost']:.4f}")
     
     lines.append(f"\n## Grand Total")
-    lines.append(f"  input={total['input']:,}  output={total['output']:,}  messages={total['messages']:,}")
+    lines.append(f"  input={total['input']:,}  output={total['output']:,}  cacheRead={total['cacheRead']:,}  messages={total['messages']:,}")
     if costs and pricing:
         lines.append(f"  est. cost=${total['cost']:.4f}")
     
@@ -664,7 +685,7 @@ def to_json(by_day, by_session, pricing=None):
         for model, u in models.items():
             d = dict(u)
             if pricing:
-                usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": 0, "cacheWrite": 0}
+                usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": u["cacheRead"], "cacheWrite": u["cacheWrite"]}
                 d["estimated_cost_usd"] = round(estimate_cost(usage_for_cost, model, pricing), 6)
             out["days"][day][model] = d
     for sid, s in by_session.items():
@@ -687,11 +708,12 @@ def to_cron_json(by_day_job, pricing=None):
             "name": data.get("name", ""),
             "input": data["input"],
             "output": data["output"],
+            "cacheRead": data.get("cacheRead", 0),
+            "cacheWrite": data.get("cacheWrite", 0),
             "messages": data["messages"]
         }
         if pricing:
-            usage_for_cost = {"input": data["input"], "output": data["output"], "cacheRead": 0, "cacheWrite": 0}
-            d["estimated_cost_usd"] = round(estimate_cost(usage_for_cost, "kimi/k2.7", pricing), 6)
+            d["estimated_cost_usd"] = round(sum(estimate_cost(usage, model, pricing) for model, usage in data.get("models", {}).items()), 6)
         out["days"][day][job_id] = d
     return out
 
@@ -706,13 +728,31 @@ def main():
     parser.add_argument("--costs", action="store_true", help="Estimate costs")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     parser.add_argument("--sessions", nargs="*", help="Specific session files")
+    parser.add_argument("--hours", type=float, help="Rolling window in hours")
+    parser.add_argument("--days", type=int, help="Rolling window in calendar days")
+    parser.add_argument("--since", help="Start time (ISO date/time or relative, e.g. 2h)")
+    parser.add_argument("--until", help="End time (ISO date/time or relative, e.g. 1h)")
+    parser.add_argument("--cache", action="store_true", help="Include cache columns in text output (shown by default)")
+    parser.add_argument("--session-detail", action="store_true", help="Include per-session totals in text output")
     args = parser.parse_args()
     
     now = datetime.now(LOCAL_TZ)
     since = None
     until = None
     
-    if args.today:
+    if args.hours is not None:
+        since = (now - timedelta(hours=args.hours)).replace(tzinfo=None).isoformat(timespec="seconds")
+    elif args.days is not None:
+        since = (now - timedelta(days=args.days)).replace(tzinfo=None).isoformat(timespec="seconds")
+    elif args.since:
+        if args.since.endswith(("m", "h", "d")):
+            amount = float(args.since[:-1])
+            unit = args.since[-1]
+            delta = timedelta(minutes=amount) if unit == "m" else timedelta(hours=amount) if unit == "h" else timedelta(days=amount)
+            since = (now - delta).replace(tzinfo=None).isoformat(timespec="seconds")
+        else:
+            since = args.since
+    elif args.today:
         since = now.strftime("%Y-%m-%dT00:00:00")
     elif args.yesterday:
         yesterday = now - timedelta(days=1)
@@ -724,8 +764,17 @@ def main():
         args.today = True
         since = now.strftime("%Y-%m-%dT00:00:00")
     
+    if args.until:
+        if args.until.endswith(("m", "h", "d")):
+            amount = float(args.until[:-1])
+            unit = args.until[-1]
+            delta = timedelta(minutes=amount) if unit == "m" else timedelta(hours=amount) if unit == "h" else timedelta(days=amount)
+            until = (now - delta).replace(tzinfo=None).isoformat(timespec="seconds")
+        else:
+            until = args.until
     sessions = args.sessions or find_sessions(since=since)
-    if not sessions and not _sqlite_transcript_sources():
+    sqlite_sources = list(_sqlite_transcript_sources())
+    if not sessions and not sqlite_sources:
         print("No session files found.")
         return
 
@@ -748,22 +797,44 @@ def main():
         header_parts.append(f"⚠️  {w}")
     header = "\n".join(header_parts)
 
+    # Merge SQLite transcripts only when SQLite is a live backend for this
+    # install (9.x primary/mixed, or unknown-version with SQLite present).
+    # On pre-9.x installs with a stale DB floating around, the classifier
+    # already warned that it will be ignored — reading it anyway would
+    # double-count sessions that also exist as JSONL.
+    read_sqlite = bool(sqlite_sources) and backend_info["primary"] in ("sqlite", "mixed")
+    # (day, model, in, out, cacheRead, cacheWrite) signatures of SQLite
+    # contributions already merged — guards against double-counting a
+    # session that exists in BOTH loose JSONL and the SQLite DB (transitional
+    # installs) with identical per-day/model aggregates.
+    seen_sqlite = set()
+
+    def _merge_sqlite_bucket(tgt, u):
+        tgt["input"] += u["input"]
+        tgt["output"] += u["output"]
+        tgt["messages"] += u["messages"]
+        tgt["cacheRead"] += u.get("cacheRead", 0)
+        tgt["cacheWrite"] += u.get("cacheWrite", 0)
+
     if args.by_cron:
         by_day_job = aggregate_by_cron(sessions, since=since, until=until)
         # Fold in the SQLite transcript backend (9.x storage migration) so cron
         # reports are not silently zero when every session file has rotated.
-        sq_by_day, _ = aggregate_sqlite(since=since, until=until)
-        for day, models in sq_by_day.items():
-            for model, u in models.items():
-                # by_day_job is keyed 'day:job_id'; SQLite lacks cron tags, so
-                # attribute it to a synthetic 'sqlite-backend' bucket per day.
-                key = f"{day}:sqlite-backend"
-                tgt = by_day_job[key]
-                tgt["input"] += u["input"]
-                tgt["output"] += u["output"]
-                tgt["messages"] += u["messages"]
-                if not tgt["name"]:
-                    tgt["name"] = "(sqlite backend)"
+        if read_sqlite:
+            sq_by_day, _ = aggregate_sqlite(since=since, until=until)
+            for day, models in sq_by_day.items():
+                for model, u in models.items():
+                    # by_day_job is keyed 'day:job_id'; SQLite lacks cron tags, so
+                    # attribute it to a synthetic 'sqlite-backend' bucket per day.
+                    sig = (day, model or "unknown", u["input"], u["output"], u["cacheRead"], u["cacheWrite"])
+                    if sig in seen_sqlite:
+                        continue
+                    seen_sqlite.add(sig)
+                    key = f"{day}:sqlite-backend"
+                    tgt = by_day_job[key]
+                    _merge_sqlite_bucket(tgt, u)
+                    if not tgt["name"]:
+                        tgt["name"] = "(sqlite backend)"
         if args.json:
             cron_payload = to_cron_json(by_day_job, pricing)
             cron_payload["openclaw_version"] = v_label
@@ -781,15 +852,20 @@ def main():
         # Merge the SQLite transcript backend (9.x storage migration): ended
         # sessions live in openclaw-agent.sqlite, not as loose .jsonl files, so
         # without this a full-day report is silently zero once sessions close.
-        sq_by_day, _ = aggregate_sqlite(since=since, until=until)
-        for day, models in sq_by_day.items():
-            for model, u in models.items():
-                d = by_day[day][model or "unknown"]
-                d["input"] += u["input"]
-                d["output"] += u["output"]
-                d["cacheRead"] += u["cacheRead"]
-                d["cacheWrite"] += u["cacheWrite"]
-                d["messages"] += u["messages"]
+        if read_sqlite:
+            sq_by_day, _ = aggregate_sqlite(since=since, until=until)
+            for day, models in sq_by_day.items():
+                for model, u in models.items():
+                    sig = (day, model or "unknown", u["input"], u["output"], u["cacheRead"], u["cacheWrite"])
+                    if sig in seen_sqlite:
+                        continue
+                    seen_sqlite.add(sig)
+                    d = by_day[day][model or "unknown"]
+                    d["input"] += u["input"]
+                    d["output"] += u["output"]
+                    d["cacheRead"] += u["cacheRead"]
+                    d["cacheWrite"] += u["cacheWrite"]
+                    d["messages"] += u["messages"]
         if args.json:
             payload = to_json(by_day, by_session, pricing)
             payload["openclaw_version"] = v_label
@@ -802,6 +878,11 @@ def main():
         else:
             print(header)
             print(format_report(by_day, by_session, pricing, args.costs))
+            if args.session_detail:
+                print("\n## Sessions")
+                for session_id, data in sorted(by_session.items()):
+                    models = ", ".join(sorted(data["models"]))
+                    print(f"  {session_id}: in={data['input']:,} out={data['output']:,} cache={data['cacheRead']:,} models={models}")
 
 if __name__ == "__main__":
     main()
