@@ -1,7 +1,7 @@
 # Tasks: openclaw-tools Reorganization
 
 *Created: 2026-08-14*
-*Last Updated: 2026-09-18 22:56:00 IST*
+*Last Updated: 2026-09-18 23:45:00 IST*
 
 ## Task Registry
 
@@ -42,14 +42,14 @@
 - [ ] Update any internal references in moved content
 - [ ] Verify benchmarks still run after move
 
-## T14: Token-Usage Parser — zstd support + Codex/interactive split
+## T15: Token-Usage Parser — zstd support + Codex/interactive split
 - [x] Add `*.jsonl.*.zst` glob to `common.py:find_sessions()`
 - [x] Add `_zstd_open()` helper (subprocess `zstd -dc`)
 - [x] Apply Cloudy's defensive fix: `(payload.get("info") or {})`
 - [x] Add `background:codex` classification in `ingest.py:classify_session()`
 - [x] Verify: 17 zstd sessions parsed, Sept 14–15 now visible, Codex split confirmed
 - [x] Write `skills/token-usage/README.md`
-- [x] Create memory-bank task T15 with full documentation
+- [x] Create memory-bank task T15 with full documentation (details restored to tasks/T15.md)
 
 ## T3: Migrate Skills (Sanitized) ✅ COMPLETE
 - [x] **Batch 1 — Original skills (Sage-created), universal:**
@@ -285,6 +285,7 @@ The `mb-text-workflow` skill had a critical flaw: it defaulted to workspace memo
 - See [T14 details](tasks/T14.md)
 
 
+## T13: Kimi/OpenClaw Long-Context Tool Degradation 🔄 IN PROGRESS
 - [x] Record the repeatable cross-instance tool failure near 130k context
 - [x] Record Telegram delivery-mirror duplication and context inflation
 - [x] Add a sanitized shared report using Instance A and Instance B labels

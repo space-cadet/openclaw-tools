@@ -1,15 +1,15 @@
 # Session Cache
 
 *Created: 2026-08-14 17:35:37 IST*
-*Last Updated: 2026-09-02 17:37 IST*
+*Last Updated: 2026-09-18 23:45 IST*
 
 ## Current Session
 **Started**: 2026-09-18 20:22 IST
-**Focus Task**: T16 - Token-Usage Parser 9.x Version Awareness + SQLite Fix
+**Focus Task**: T16 + mem-scan remediation (registry restoration)
 **Session File**: `sessions/2026-09-18-evening.md`
 
 ## Overview
-- Active Tasks: 4
+- Active Tasks: 5 (T2, T10, T11, T13, T14) | Completed: 12 | Total: 17
 - Paused Tasks: 0
 - Last Session: `sessions/2026-09-02-afternoon.md`
 - Current Period: evening
