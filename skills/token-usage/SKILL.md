@@ -3,12 +3,12 @@ name: token-usage
 description: "Track, aggregate, and report OpenClaw token usage and costs across sessions."
 homepage: https://github.com/space-cadet/openclaw-tools/tree/main/skills/token-usage
 license: MIT
-version: "2.4.0"
+version: "2.5.0"
 ---
 
 # Token Usage Tracker
 
-Parse OpenClaw and Codex session JSONL files to extract token usage, aggregate by date/model/session, and generate provider-aware cost reports.
+Parse OpenClaw and Codex session files to extract token usage, aggregate by date/model/session, and generate provider-aware cost reports. Works across OpenClaw storage eras — pre-9.x JSONL, 9.x SQLite, and transitional mixed storage.
 
 ## When to Use
 

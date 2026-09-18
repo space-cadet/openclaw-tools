@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Name** | token-usage |
-| **Version** | v2.4.0 |
+| **Version** | v2.5.0 |
 | **One-liner** | Track, aggregate, and report OpenClaw token usage and costs across sessions. |
 
 ## Trigger
@@ -73,6 +73,14 @@ cd scripts && python3 report.py --yesterday --compact
 cd scripts && python3 report.py --week --compact
 cd scripts && python3 report.py --month --compact
 ```
+
+## New in v2.5.0
+- **9.x SQLite backend**: auto-detects OpenClaw version and reads `openclaw-agent.sqlite → transcript_events` for live data
+- **Version-aware storage**: pre-9.x JSONL, 9.x SQLite, transitional mixed — all handled transparently
+- **macOS SQLite fix**: plain `sqlite3.connect()` instead of URI mode (which fails on temp files)
+- **Timestamp normalisation**: strips `Z` suffix so UTC SQLite timestamps compare correctly with local IST boundaries
+- **Mtime pre-filter**: `--today` only opens files modified within the window (skips 5,600+ stale files)
+- **Report header**: shows detected OpenClaw version, storage backend, and warnings
 
 ## New in v2.4.0
 
