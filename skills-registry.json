@@ -15,7 +15,7 @@
     {"name": "mem-update", "version": "1.0.0", "category": "memory", "description": "Memory bank update workflow — v6.12 compliant with project-repo awareness", "hasScripts": false, "hasSkillCard": true},
     {"name": "mb-db-workflow", "version": "1.0.0", "category": "memory", "description": "Update memory bank via SQLite + markdown regeneration", "hasScripts": false, "hasSkillCard": true},
     {"name": "mb-init", "version": "1.0.0", "category": "memory", "description": "Initialize a memory bank for a new or existing project", "hasScripts": false, "hasSkillCard": true},
-    {"name": "mb-text-workflow", "version": "1.0.0", "category": "memory", "description": "Update memory bank via markdown editing", "hasScripts": false, "hasSkillCard": true},
+    {"name": "mb-text-workflow", "version": "1.0.0", "category": "memory", "description": "SUPERSEDED by mem-update — merged 2026-09-18. Do not use.", "hasScripts": false, "hasSkillCard": true, "superseded": true, "supersededBy": "mem-update"},
     {"name": "mcp-client", "version": "1.0.0", "category": "utility", "description": "Spawn and interact with MCP (Model Context Protocol) servers", "hasScripts": true, "hasSkillCard": true},
     {"name": "netstatus", "version": "1.0.0", "category": "network", "description": "Combined network + gateway status with VPN info, IP location, and system health", "hasScripts": false, "hasSkillCard": true},
     {"name": "openclaw-backup", "version": "1.0.0", "category": "utility", "description": "Backup and restore OpenClaw data with automatic rotation", "hasScripts": true, "hasSkillCard": true},
