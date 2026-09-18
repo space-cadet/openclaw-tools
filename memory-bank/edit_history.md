@@ -1,7 +1,17 @@
 # Edit History
 
 *Created: 2026-09-02 18:52 IST*
-*Last Updated: 2026-09-18 21:53:08 IST*
+*Last Updated: 2026-09-18 22:56:00 IST*
+
+### 2026-09-18
+
+#### 22:56:00 IST - T16: mem-update skill merge + ClawHub curation
+- Modified `skills/mem-update/SKILL.md` - Merged mb-text-workflow into mem-update (kept project-repo awareness Step 0A + correct §6.5 edit-chunk handling). 91 → 223 lines.
+- Modified `skills/mem-format/SKILL.md` - Cleaned Windsurf/`// turbo` residue; TypeScript → pseudocode. 235 → 193 lines.
+- Modified `skills/mem-load/SKILL.md` - Removed Windsurf preamble. 91 → 86 lines.
+- Modified `skills-registry.json` - Marked mb-text-workflow superseded by mem-update.
+- Created `memory-bank/edits/2026-09-18/225600-T16-mem-skills-merge.md` - Canonical edit chunk.
+- Modified `memory-bank/tasks.md` - Stamped Last Updated.
 
 ### 2026-09-18
 
