@@ -3,6 +3,13 @@
 
 import json
 import gzip
+import os
+import subprocess
+import contextlib
+import sqlite3
+import tempfile
+import shutil
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 LOCAL_TZ = ZoneInfo("Asia/Calcutta")
@@ -12,7 +19,6 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import glob
-from common import find_sessions as find_shared_sessions, parse_session as parse_shared_session, normalize_model, local_timestamp, local_date
 
 DEFAULT_PRICING = {
     "kimi/k2.7": {"input": 0.90, "output": 3.75, "cache_read": 0.10, "cache_write": 1.00},
@@ -27,6 +33,172 @@ DEFAULT_PRICING = {
     "openai/gpt-5.4": {"input": 2.50, "output": 15.00, "cache_read": 0.25, "cache_write": 0},
 }
 
+def _detect_openclaw_version():
+    """Return the installed OpenClaw version string, or None on failure.
+
+    Resolution order:
+      1. Scan every NVM node tree for an openclaw install and return the
+         **newest** version found. The gateway almost always runs from the
+         latest install, and old trees are typically left behind after an
+         upgrade, so max() is the safest single guess.
+      2. Fall back to system-wide install paths.
+
+    Never shells out to `openclaw --version` because that can block when the
+    gateway is busy or the CLI is waiting on a lock.
+    """
+    found = []
+
+    nvm_base = Path.home() / ".nvm" / "versions" / "node"
+    if nvm_base.exists():
+        for node_dir in sorted(nvm_base.iterdir()):
+            pkg = node_dir / "lib" / "node_modules" / "openclaw" / "package.json"
+            if pkg.exists():
+                try:
+                    ver = json.loads(pkg.read_text()).get("version", "")
+                    if ver:
+                        found.append(ver)
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+    for sys_pkg in (
+        Path("/usr/lib/node_modules/openclaw/package.json"),
+        Path("/usr/local/lib/node_modules/openclaw/package.json"),
+        Path("/opt/homebrew/lib/node_modules/openclaw/package.json"),
+    ):
+        if sys_pkg.exists():
+            try:
+                ver = json.loads(sys_pkg.read_text()).get("version", "")
+                if ver:
+                    found.append(ver)
+            except (json.JSONDecodeError, OSError):
+                continue
+
+    if not found:
+        return None
+
+    # Newest version wins. Versions are 'YYYY.M.P' — parse to a tuple for
+    # reliable numeric comparison, then return the original string.
+    def _key(v):
+        return tuple(int(p) for p in v.split(".") if p.isdigit())
+
+    try:
+        return max(found, key=_key)
+    except (ValueError, TypeError):
+        return found[-1]
+
+
+def _version_major_minor(version_str):
+    """Return (major, minor) tuple from a version string like '2026.9.4'."""
+    if not version_str:
+        return None
+    m = re.match(r"(\d+)\.(\d+)", version_str)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None
+
+
+def detect_storage_backends():
+    """Detect which session-storage backends are present for this install.
+
+    Returns a dict with keys:
+      version        – detected OpenClaw version string or None
+      version_mm     – (major, minor) tuple or None
+      jsonl_sessions – list of loose .jsonl / .jsonl.gz files found
+      sqlite_dbs     – list of openclaw-agent.sqlite paths found
+      zst_archives   – list of .jsonl.deleted.*.zst files found
+      primary        – 'jsonl' | 'sqlite' | 'mixed' | 'unknown'
+      warnings       – list of human-readable warning strings
+    """
+    version = _detect_openclaw_version()
+    version_mm = _version_major_minor(version)
+
+    jsonl_sessions = find_sessions()
+    sqlite_dbs = list(_sqlite_transcript_sources())
+    zst_archives = [
+        p for p in jsonl_sessions if ".deleted." in p or p.endswith(".zst")
+    ]
+    loose_jsonl = [p for p in jsonl_sessions if p not in zst_archives]
+
+    warnings = []
+
+    if version_mm:
+        major, minor = version_mm
+        if major >= 2026 and minor >= 9:
+            # 9.x: SQLite is the primary live backend, JSONL may still exist
+            # for older rotated sessions.
+            if sqlite_dbs and not loose_jsonl:
+                primary = "sqlite"
+            elif sqlite_dbs and loose_jsonl:
+                primary = "mixed"
+                warnings.append(
+                    "Mixed storage: SQLite (9.x live) + loose JSONL files detected. "
+                    "Ensure the SQLite DB is readable to avoid silently missing recent sessions."
+                )
+            elif not sqlite_dbs and loose_jsonl:
+                primary = "jsonl"
+                warnings.append(
+                    f"OpenClaw {version} normally stores live sessions in SQLite, "
+                    "but no openclaw-agent.sqlite was found. "
+                    "Falling back to JSONL only — recent sessions may be missing."
+                )
+            else:
+                primary = "unknown"
+                warnings.append("No session storage backends detected.")
+        else:
+            # Pre-9.x: JSONL is the only backend.
+            if loose_jsonl:
+                primary = "jsonl"
+                if sqlite_dbs:
+                    warnings.append(
+                        f"OpenClaw {version} predates the SQLite storage migration "
+                        "but an openclaw-agent.sqlite file is present. "
+                        "The SQLite data will be ignored to match the installed version."
+                    )
+            elif sqlite_dbs and not loose_jsonl:
+                primary = "sqlite"
+                warnings.append(
+                    f"OpenClaw {version} predates the SQLite storage migration "
+                    "but only SQLite storage was found. "
+                    "This may be a stale DB from a previous 9.x install."
+                )
+            else:
+                primary = "unknown"
+                warnings.append("No session storage backends detected.")
+    else:
+        # Version unknown — infer from what is present.
+        if sqlite_dbs and loose_jsonl:
+            primary = "mixed"
+            warnings.append(
+                "Could not determine OpenClaw version; "
+                "both SQLite and JSONL storage detected. Reading both."
+            )
+        elif sqlite_dbs:
+            primary = "sqlite"
+            warnings.append(
+                "Could not determine OpenClaw version; "
+                "SQLite storage detected (OpenClaw 2026.9.x or later)."
+            )
+        elif loose_jsonl:
+            primary = "jsonl"
+            warnings.append(
+                "Could not determine OpenClaw version; "
+                "JSONL storage detected (OpenClaw 2026.6.x or earlier)."
+            )
+        else:
+            primary = "unknown"
+            warnings.append("No session storage backends detected.")
+
+    return {
+        "version": version,
+        "version_mm": version_mm,
+        "jsonl_sessions": loose_jsonl,
+        "sqlite_dbs": [str(p) for p in sqlite_dbs],
+        "zst_archives": zst_archives,
+        "primary": primary,
+        "warnings": warnings,
+    }
+
+
 def load_pricing():
     pricing_file = Path(__file__).parent / "pricing.json"
     if pricing_file.exists():
@@ -34,30 +206,192 @@ def load_pricing():
             return {**DEFAULT_PRICING, **json.load(f)}
     return DEFAULT_PRICING
 
-def find_sessions(base_paths=None):
-    if base_paths is None:
-        return [str(path) for path in find_shared_sessions()]
+def find_sessions(base_paths=None, since=None):
+    """Find session files, optionally filtering by modification time.
+
+    When *since* is given (ISO date-time string), skip files whose mtime is
+    older than the start of that window. JSONL files are append-only, so the
+    mtime is a reliable upper bound on the newest event they can contain.
+    This avoids opening thousands of stale files when we only need today.
+    """
     if base_paths is None:
         base_paths = [
             Path.home() / ".openclaw" / "agents" / "main" / "sessions",
             Path.home() / ".openclaw" / "agents" / "sub" / "sessions",
+            # Codex app-server rollout logs use a nested YYYY/MM/DD layout.
             Path.home() / ".openclaw" / "agents" / "main" / "agent" / "codex-home" / "sessions",
         ]
+
+    mtime_floor = None
+    if since:
+        try:
+            dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=LOCAL_TZ)
+            # Convert to Unix timestamp for comparison with os.path.getmtime()
+            mtime_floor = dt.timestamp()
+        except (ValueError, TypeError):
+            mtime_floor = None
+
     sessions = []
     for bp in base_paths:
         if bp.exists():
-            sessions.extend(glob.glob(str(bp / "**" / "*.jsonl"), recursive=True))
-            sessions.extend(glob.glob(str(bp / "**" / "*.jsonl.gz"), recursive=True))
+            for pat in ("**/*.jsonl", "**/*.jsonl.gz", "**/*.jsonl.deleted.*.zst"):
+                for p in glob.glob(str(bp / pat), recursive=True):
+                    if mtime_floor is not None:
+                        try:
+                            if os.path.getmtime(p) < mtime_floor:
+                                continue
+                        except OSError:
+                            continue
+                    sessions.append(p)
     return sorted(set(sessions))
+
+# ---------------------------------------------------------------------------
+# SQLite transcript backend (OpenClaw 2026.9.x)
+# ---------------------------------------------------------------------------
+# Since the 9.x storage migration, live session transcripts live in
+# `~/.openclaw/agents/<agent>/agent/openclaw-agent.sqlite` (table
+# `transcript_events.event_json`), not as loose `.jsonl` files. Ended-session
+# JSONL is additionally rotated to zstd archives or SQLite `archive_blob`s.
+# The live DB is protected state: `exec` refuses to open it in place, so we
+# snapshot it to a temp copy and read that.
+_SQLITE_DB_CANDIDATES = [
+    "agents/main/agent/openclaw-agent.sqlite",
+    "agents/sub/agent/openclaw-agent.sqlite",
+]
+
+def _sqlite_transcript_sources(state_dir=None):
+    """Yield (path, session_id) for the agent SQLite transcript DBs."""
+    root = Path(state_dir) if state_dir else Path.home() / ".openclaw"
+    for rel in _SQLITE_DB_CANDIDATES:
+        p = root / rel
+        if p.exists():
+            yield p
+
+def _snapshot_sqlite(db_path):
+    """Snapshot the live DB to a temp file so we can read it without holding the
+    production lock or tripping the protected-state guard.
+
+    Uses the SQLite online-backup API rather than a raw file copy: the live DB
+    is under constant write (WAL), and a plain shutil.copyfile can catch a torn
+    checkpoint, yielding a copy sqlite3 then refuses to open ("unable to open
+    database file"). sqlite3.Connection.backup copies a consistent snapshot even
+    while the source is being written.
+
+    Snapshots to /tmp, NOT tempfile.gettempdir(): OpenClaw sets TMPDIR to
+    ~/.openclaw/tmp, which is inside the protected state dir and sqlite3 refuses
+    to open databases there. /tmp is genuinely outside the guard.
+
+    Returns the temp path, or None on failure. Caller must unlink it."""
+    fd, tmp = tempfile.mkstemp(suffix=".sqlite", prefix="oc-tok-", dir="/tmp")
+    os.close(fd)
+    try:
+        src = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            dst = sqlite3.connect(tmp)
+            try:
+                src.backup(dst)
+            finally:
+                dst.close()
+        finally:
+            src.close()
+        return tmp
+    except (sqlite3.Error, OSError):
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        return None
+
+def _normalise_ts(ts):
+    """Return a comparable string for a timestamp.
+
+    Session files store UTC timestamps with a 'Z' suffix (e.g.
+    '2026-09-18T15:06:59.778Z'). The --since / --until boundaries are local
+    IST strings without the suffix. To make string comparison meaningful we
+    strip the 'Z' so both sides are naive local-ish strings. This is a
+    pragmatic upper-bound filter — the aggregate_sqlite and parse_session_file
+    loops do the same.
+    """
+    if not ts:
+        return ""
+    return ts.replace("Z", "")
+
+
+def parse_sqlite_transcripts(db_path, since=None, until=None):
+    """Yield (timestamp, model, usage_dict) from transcript_events.event_json."""
+    snap = _snapshot_sqlite(db_path)
+    if not snap:
+        return
+    try:
+        # Use plain connect, not URI mode — macOS sqlite3 can refuse to open
+        # a freshly-created temp file in URI read-only mode.
+        con = sqlite3.connect(snap)
+        cur = con.cursor()
+        try:
+            rows = cur.execute(
+                "SELECT event_json FROM transcript_events"
+                " WHERE event_json LIKE '%\"usage\"%'"
+            )
+            for (event_json,) in rows:
+                try:
+                    d = json.loads(event_json)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                m = d.get("message") or {}
+                if m.get("role") != "assistant":
+                    continue
+                usage = m.get("usage")
+                if not usage:
+                    continue
+                ts = d.get("timestamp") or d.get("ts") or ""
+                model = m.get("model") or d.get("model") or d.get("api") or ""
+                yield _normalise_ts(ts), model, usage
+        finally:
+            con.close()
+    except sqlite3.Error:
+        pass
+    finally:
+        try:
+            os.unlink(snap)
+        except OSError:
+            pass
+
+def aggregate_sqlite(since=None, until=None):
+    """Aggregate token usage straight from the SQLite transcript backend."""
+    by_day = defaultdict(lambda: defaultdict(lambda: {
+        "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0
+    }))
+    total = 0
+    for db in _sqlite_transcript_sources():
+        for ts, model, usage in parse_sqlite_transcripts(db, since, until):
+            if since and ts < since:
+                continue
+            if until and ts > until:
+                continue
+            day = ts[:10] if ts else "unknown"
+            key = model or "unknown"
+            d = by_day[day][key]
+            d["input"] += usage.get("input", 0)
+            d["output"] += usage.get("output", 0)
+            d["cacheRead"] += usage.get("cacheRead", 0)
+            d["cacheWrite"] += usage.get("cacheWrite", 0)
+            d["messages"] += 1
+            total += 1
+    return by_day, total
 
 def parse_session_file(path):
     """Yield (timestamp, model, usage_dict) for each assistant message."""
-    yield from parse_shared_session(path)
-    return
-    # Kept below only as a reference for old session formats.
-    open_fn = gzip.open if path.endswith(".gz") else open
+    path = str(path)
+    if ".deleted." in path or path.endswith(".zst"):
+        ctx = contextlib.closing(_zstd_stream(path))
+    elif path.endswith(".gz"):
+        ctx = gzip.open(path, "rt", encoding="utf-8", errors="replace")
+    else:
+        ctx = open(path, "rt", encoding="utf-8", errors="replace")
     try:
-        with open_fn(path, "rt", encoding="utf-8", errors="replace") as f:
+        with ctx as f:
             codex_model = ""
             for line in f:
                 line = line.strip()
@@ -67,17 +401,24 @@ def parse_session_file(path):
                     msg = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                # Codex rollout logs emit cumulative token_count events.  The
+                # last_token_usage object is per-turn, so it is safe to sum.
                 if msg.get("type") == "event_msg":
                     payload = msg.get("payload", {})
                     if payload.get("type") == "token_count":
-                        usage = (payload.get("info", {}).get("last_token_usage") or {})
+                        info = payload.get("info") or {}
+                        usage = info.get("last_token_usage") or {}
                         if usage:
-                            yield msg.get("timestamp", ""), codex_model or "openai/gpt-5.6-luna", {
-                                "input": usage.get("input_tokens", 0),
-                                "output": usage.get("output_tokens", 0),
-                                "cacheRead": usage.get("cached_input_tokens", 0),
-                                "cacheWrite": usage.get("cache_write_input_tokens", 0),
-                            }
+                            yield (
+                                msg.get("timestamp", ""),
+                                codex_model or "openai/gpt-5.6-luna",
+                                {
+                                    "input": usage.get("input_tokens", 0),
+                                    "output": usage.get("output_tokens", 0),
+                                    "cacheRead": usage.get("cached_input_tokens", 0),
+                                    "cacheWrite": usage.get("cache_write_input_tokens", 0),
+                                },
+                            )
                     continue
                 if msg.get("type") == "turn_context":
                     codex_model = msg.get("payload", {}).get("model", "") or codex_model
@@ -92,9 +433,27 @@ def parse_session_file(path):
                     continue
                 ts = msg.get("timestamp", "")
                 model = m.get("model", msg.get("model", msg.get("api", "")))
-                yield ts, model, usage
+                yield _normalise_ts(ts), model, usage
     except (FileNotFoundError, OSError):
         pass
+
+def _zstd_stream(path):
+    """Yield decompressed text lines from a zstd-compressed session archive."""
+    proc = subprocess.Popen(
+        ["zstd", "-d", "-c", "--", path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    try:
+        for line in proc.stdout:
+            yield line
+    finally:
+        proc.stdout.close()
+        proc.wait()
+
 
 def aggregate(sessions, since=None, until=None):
     by_day = defaultdict(lambda: defaultdict(lambda: {
@@ -107,12 +466,11 @@ def aggregate(sessions, since=None, until=None):
     for spath in sessions:
         sid = Path(spath).stem
         for ts, model, usage in parse_session_file(spath):
-            local_ts = local_timestamp(ts)
-            if since and local_ts < since:
+            if since and ts < since:
                 continue
-            if until and local_ts >= until:
+            if until and ts > until:
                 continue
-            day = local_date(ts)
+            day = ts[:10] if ts else "unknown"
             model_key = model or "unknown"
             
             inp = usage.get("input", 0)
@@ -172,7 +530,7 @@ def detect_cron_job(path):
 def aggregate_by_cron(sessions, since=None, until=None):
     """Aggregate token usage by cron job and date."""
     by_day_job = defaultdict(lambda: {
-        "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "name": "", "models": {}
+        "input": 0, "output": 0, "messages": 0, "name": ""
     })
     
     for spath in sessions:
@@ -180,30 +538,19 @@ def aggregate_by_cron(sessions, since=None, until=None):
         if not job_id:
             continue
         for ts, model, usage in parse_session_file(spath):
-            local_ts = local_timestamp(ts)
-            if since and local_ts < since:
+            if since and ts < since:
                 continue
-            if until and local_ts >= until:
+            if until and ts > until:
                 continue
-            day = local_date(ts)
+            day = ts[:10] if ts else "unknown"
             key = f"{day}:{job_id}"
             
             inp = usage.get("input", 0)
             out = usage.get("output", 0)
-            cache_read = usage.get("cacheRead", 0)
-            cache_write = usage.get("cacheWrite", 0)
-            model_key = normalize_model(model)
             
             by_day_job[key]["input"] += inp
             by_day_job[key]["output"] += out
-            by_day_job[key]["cacheRead"] += cache_read
-            by_day_job[key]["cacheWrite"] += cache_write
             by_day_job[key]["messages"] += 1
-            model_data = by_day_job[key]["models"].setdefault(model_key, {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0})
-            model_data["input"] += inp
-            model_data["output"] += out
-            model_data["cacheRead"] += cache_read
-            model_data["cacheWrite"] += cache_write
             if job_name and not by_day_job[key]["name"]:
                 by_day_job[key]["name"] = job_name
     
@@ -211,12 +558,16 @@ def aggregate_by_cron(sessions, since=None, until=None):
 
 def estimate_cost(usage, model, pricing):
     """Estimate cost in USD. Prices are per 1M tokens."""
-    model = normalize_model(model)
     p = pricing.get(model)
     if p is None and "/" not in model:
-        p = pricing.get(f"kimi/{model}")
+        # Try common provider prefixes
+        for prefix in ["kimi/", "openai/", "anthropic/", "google/", "deepseek/", "qwen/", "x-ai/"]:
+            p = pricing.get(prefix + model)
+            if p is not None:
+                break
     if p is None:
-        return 0.0
+        # Never silently price an unknown provider as Kimi.
+        p = {}
     cost = 0.0
     cost += usage.get("input", 0) * (p.get("input") or 0) / 1e6
     cost += usage.get("output", 0) * (p.get("output") or 0) / 1e6
@@ -233,7 +584,7 @@ def format_report(by_day, by_session, pricing=None, costs=False):
         day_total = {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "messages": 0, "cost": 0.0}
         for model in sorted(by_day[day].keys()):
             u = by_day[day][model]
-            usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": u["cacheRead"], "cacheWrite": u["cacheWrite"]}
+            usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": 0, "cacheWrite": 0}
             c = estimate_cost(usage_for_cost, model, pricing) if (costs and pricing) else 0.0
             lines.append(f"  {model:30s}  in={u['input']:>10,}  out={u['output']:>8,}  cache={u['cacheRead']:>8,}  msgs={u['messages']:>4}")
             if costs and pricing:
@@ -241,15 +592,15 @@ def format_report(by_day, by_session, pricing=None, costs=False):
             for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
                 day_total[k] += u[k]
             day_total["cost"] += c
-            for k in ["input", "output", "cacheRead", "cacheWrite", "messages"]:
+            for k in ["input", "output", "messages"]:
                 total[k] += u[k]
             total["cost"] += c
-        lines.append(f"  {'Day total':30s}  in={day_total['input']:>10,}  out={day_total['output']:>8,}  msgs={day_total['messages']:>4}")
+        lines.append(f"  {'Day total':30s}  in={day_total['input']:>10,}  out={day_total['output']:>8,}  cache={day_total['cacheRead']:>8,}  msgs={day_total['messages']:>4}")
         if costs and pricing:
             lines.append(f"  {'':34s}est. ${day_total['cost']:.4f}")
     
     lines.append(f"\n## Grand Total")
-    lines.append(f"  input={total['input']:,}  output={total['output']:,}  messages={total['messages']:,}")
+    lines.append(f"  input={total['input']:,}  output={total['output']:,}  cacheRead={total['cacheRead']:,}  messages={total['messages']:,}")
     if costs and pricing:
         lines.append(f"  est. cost=${total['cost']:.4f}")
     
@@ -277,12 +628,10 @@ def format_cron_report(by_day_job, pricing=None, costs=False):
             if len(name) > 28:
                 name = name[:25] + "..."
             
-            c = 0.0
-            if costs and pricing:
-                for model, usage in data.get("models", {}).items():
-                    c += estimate_cost(usage, model, pricing)
+            usage_for_cost = {"input": data["input"], "output": data["output"], "cacheRead": 0, "cacheWrite": 0}
+            c = estimate_cost(usage_for_cost, "kimi/k2.7", pricing) if (costs and pricing) else 0.0
             
-            lines.append(f"  {name:<28}  calls={data['messages']:>4}  in={data['input']:>10,}  out={data['output']:>8,}  cache={data['cacheRead'] + data['cacheWrite']:>8,}")
+            lines.append(f"  {name:<28}  calls={data['messages']:>4}  in={data['input']:>10,}  out={data['output']:>8,}")
             if costs and pricing:
                 lines.append(f"{'':34s}est. ${c:.4f}")
             
@@ -315,7 +664,7 @@ def to_json(by_day, by_session, pricing=None):
         for model, u in models.items():
             d = dict(u)
             if pricing:
-                usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": u["cacheRead"], "cacheWrite": u["cacheWrite"]}
+                usage_for_cost = {"input": u["input"], "output": u["output"], "cacheRead": 0, "cacheWrite": 0}
                 d["estimated_cost_usd"] = round(estimate_cost(usage_for_cost, model, pricing), 6)
             out["days"][day][model] = d
     for sid, s in by_session.items():
@@ -340,10 +689,9 @@ def to_cron_json(by_day_job, pricing=None):
             "output": data["output"],
             "messages": data["messages"]
         }
-        d["cacheRead"] = data.get("cacheRead", 0)
-        d["cacheWrite"] = data.get("cacheWrite", 0)
         if pricing:
-            d["estimated_cost_usd"] = round(sum(estimate_cost(usage, model, pricing) for model, usage in data.get("models", {}).items()), 6)
+            usage_for_cost = {"input": data["input"], "output": data["output"], "cacheRead": 0, "cacheWrite": 0}
+            d["estimated_cost_usd"] = round(estimate_cost(usage_for_cost, "kimi/k2.7", pricing), 6)
         out["days"][day][job_id] = d
     return out
 
@@ -358,31 +706,13 @@ def main():
     parser.add_argument("--costs", action="store_true", help="Estimate costs")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     parser.add_argument("--sessions", nargs="*", help="Specific session files")
-    parser.add_argument("--hours", type=float, help="Rolling window in hours")
-    parser.add_argument("--days", type=int, help="Rolling window in calendar days")
-    parser.add_argument("--since", help="Start time (ISO date/time or relative, e.g. 2h)")
-    parser.add_argument("--until", help="End time (ISO date/time or relative, e.g. 1h)")
-    parser.add_argument("--cache", action="store_true", help="Include cache columns in text output")
-    parser.add_argument("--session-detail", action="store_true", help="Include per-session totals in text output")
     args = parser.parse_args()
     
     now = datetime.now(LOCAL_TZ)
     since = None
     until = None
     
-    if args.hours is not None:
-        since = (now - timedelta(hours=args.hours)).replace(tzinfo=None).isoformat(timespec="seconds")
-    elif args.days is not None:
-        since = (now - timedelta(days=args.days)).replace(tzinfo=None).isoformat(timespec="seconds")
-    elif args.since:
-        if args.since.endswith(("m", "h", "d")):
-            amount = float(args.since[:-1])
-            unit = args.since[-1]
-            delta = timedelta(minutes=amount) if unit == "m" else timedelta(hours=amount) if unit == "h" else timedelta(days=amount)
-            since = (now - delta).replace(tzinfo=None).isoformat(timespec="seconds")
-        else:
-            since = args.since
-    elif args.today:
+    if args.today:
         since = now.strftime("%Y-%m-%dT00:00:00")
     elif args.yesterday:
         yesterday = now - timedelta(days=1)
@@ -394,38 +724,84 @@ def main():
         args.today = True
         since = now.strftime("%Y-%m-%dT00:00:00")
     
-    if args.until:
-        if args.until.endswith(("m", "h", "d")):
-            amount = float(args.until[:-1])
-            unit = args.until[-1]
-            delta = timedelta(minutes=amount) if unit == "m" else timedelta(hours=amount) if unit == "h" else timedelta(days=amount)
-            until = (now - delta).replace(tzinfo=None).isoformat(timespec="seconds")
-        else:
-            until = args.until
-    sessions = args.sessions or find_sessions()
-    if not sessions:
+    sessions = args.sessions or find_sessions(since=since)
+    if not sessions and not _sqlite_transcript_sources():
         print("No session files found.")
         return
-    
+
+    # ── Version / backend detection ──────────────────────────────────────
+    backend_info = detect_storage_backends()
+    v_label = backend_info["version"] or "unknown"
+    backend_label = backend_info["primary"]
+    n_jsonl = len(backend_info["jsonl_sessions"])
+    n_sqlite = len(backend_info["sqlite_dbs"])
+    n_zst = len(backend_info["zst_archives"])
+
     pricing = load_pricing() if args.costs else None
-    
+
+    header_parts = [
+        f"OpenClaw version : {v_label}",
+        f"Storage backend  : {backend_label}"
+        f"  (jsonl={n_jsonl}, sqlite={n_sqlite}, zst_archives={n_zst})",
+    ]
+    for w in backend_info["warnings"]:
+        header_parts.append(f"⚠️  {w}")
+    header = "\n".join(header_parts)
+
     if args.by_cron:
         by_day_job = aggregate_by_cron(sessions, since=since, until=until)
+        # Fold in the SQLite transcript backend (9.x storage migration) so cron
+        # reports are not silently zero when every session file has rotated.
+        sq_by_day, _ = aggregate_sqlite(since=since, until=until)
+        for day, models in sq_by_day.items():
+            for model, u in models.items():
+                # by_day_job is keyed 'day:job_id'; SQLite lacks cron tags, so
+                # attribute it to a synthetic 'sqlite-backend' bucket per day.
+                key = f"{day}:sqlite-backend"
+                tgt = by_day_job[key]
+                tgt["input"] += u["input"]
+                tgt["output"] += u["output"]
+                tgt["messages"] += u["messages"]
+                if not tgt["name"]:
+                    tgt["name"] = "(sqlite backend)"
         if args.json:
-            print(json.dumps(to_cron_json(by_day_job, pricing), indent=2))
+            cron_payload = to_cron_json(by_day_job, pricing)
+            cron_payload["openclaw_version"] = v_label
+            cron_payload["storage_backend"] = backend_label
+            cron_payload["storage_counts"] = {
+                "jsonl": n_jsonl, "sqlite": n_sqlite, "zst": n_zst
+            }
+            cron_payload["warnings"] = backend_info["warnings"]
+            print(json.dumps(cron_payload, indent=2))
         else:
+            print(header)
             print(format_cron_report(by_day_job, pricing, args.costs))
     else:
         by_day, by_session = aggregate(sessions, since=since, until=until)
+        # Merge the SQLite transcript backend (9.x storage migration): ended
+        # sessions live in openclaw-agent.sqlite, not as loose .jsonl files, so
+        # without this a full-day report is silently zero once sessions close.
+        sq_by_day, _ = aggregate_sqlite(since=since, until=until)
+        for day, models in sq_by_day.items():
+            for model, u in models.items():
+                d = by_day[day][model or "unknown"]
+                d["input"] += u["input"]
+                d["output"] += u["output"]
+                d["cacheRead"] += u["cacheRead"]
+                d["cacheWrite"] += u["cacheWrite"]
+                d["messages"] += u["messages"]
         if args.json:
-            print(json.dumps(to_json(by_day, by_session, pricing), indent=2))
+            payload = to_json(by_day, by_session, pricing)
+            payload["openclaw_version"] = v_label
+            payload["storage_backend"] = backend_label
+            payload["storage_counts"] = {
+                "jsonl": n_jsonl, "sqlite": n_sqlite, "zst": n_zst
+            }
+            payload["warnings"] = backend_info["warnings"]
+            print(json.dumps(payload, indent=2))
         else:
+            print(header)
             print(format_report(by_day, by_session, pricing, args.costs))
-            if args.session_detail:
-                print("\n## Sessions")
-                for session_id, data in sorted(by_session.items()):
-                    models = ", ".join(sorted(data["models"]))
-                    print(f"  {session_id}: in={data['input']:,} out={data['output']:,} cache={data['cacheRead']:,} models={models}")
 
 if __name__ == "__main__":
     main()

@@ -4,20 +4,21 @@
 *Last Updated: 2026-09-02 17:37 IST*
 
 ## Current Session
-**Started**: 2026-09-02 17:37 IST
-**Focus Task**: T14 - OpenAI Luna Thinking Level Benchmark
-**Session File**: `sessions/2026-09-02-afternoon.md`
+**Started**: 2026-09-18 20:22 IST
+**Focus Task**: T16 - Token-Usage Parser 9.x Version Awareness + SQLite Fix
+**Session File**: `sessions/2026-09-18-evening.md`
 
 ## Overview
 - Active Tasks: 4
 - Paused Tasks: 0
-- Last Session: `sessions/2026-08-23-afternoon.md`
-- Current Period: afternoon
-- Last Task Focus: T14
+- Last Session: `sessions/2026-09-02-afternoon.md`
+- Current Period: evening
+- Last Task Focus: T16
 
 ## Session History
-1. `sessions/2026-09-02-afternoon.md` - T14 Luna thinking benchmark
-2. `sessions/2026-08-23-afternoon.md` - T13 context-degradation record
+1. `sessions/2026-09-18-evening.md` - T16 token-usage 9.x fix + INFRA-11 close
+2. `sessions/2026-09-02-afternoon.md` - T14 Luna thinking benchmark
+3. `sessions/2026-08-23-afternoon.md` - T13 context-degradation record
 3. `sessions/2026-08-14-evening.md` - Token-usage audit and work plan
 
 ## Active Tasks

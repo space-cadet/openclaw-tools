@@ -1,5 +1,18 @@
 # Progress: openclaw-tools Reorganization
 
+## Completed (2026-09-18)
+
+### T16: Token-Usage Parser — 9.x Version Awareness + SQLite Migration Fix
+- **Root cause**: nightly report returned 0 tokens after 9.x upgrade
+- **Four bugs found and fixed**:
+  1. Version detection read stale Node v22 `package.json` (2026.6.34) instead of running v24.21.0 install (2026.9.4) — pre-9.x logic then ignored SQLite backend
+  2. macOS `sqlite3.connect("file:...?mode=ro", uri=True)` fails on temp files — replaced with plain `sqlite3.connect()`
+  3. SQLite timestamps have `Z` suffix (UTC), `--since` is local IST — string comparison always False. Added `_normalise_ts()` to strip `Z`
+  4. No mtime pre-filter — added to `find_sessions(since=...)` so `--today` skips 5,600+ stale JSONL files
+- **New features**: version detection, storage backend classifier, report header with version/backend/warnings, JSON output with `openclaw_version`/`storage_backend`/`storage_counts`/`warnings`
+- **Verified**: `--today` returns 855K input / $2.43, `--week` returns 26.3M / $35.82
+- See [T16 details](tasks/T16.md)
+
 ## In Progress (2026-09-02)
 
 ### T14: OpenAI Luna Thinking Level Benchmark

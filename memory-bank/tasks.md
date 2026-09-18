@@ -1,5 +1,33 @@
 # Tasks: openclaw-tools Reorganization
 
+*Created: 2026-08-14*
+*Last Updated: 2026-09-18 21:53:08 IST*
+
+## Task Registry
+
+| ID | Title | Status | Priority | Started | Dependencies | Details |
+|----|-------|--------|----------|---------|--------------|---------|
+| T1 | Repo Infrastructure | ✅ | HIGH | 2026-08-14 | — | [Details](tasks/T1.md) |
+| T2 | Reorganize Existing Content | 🔄 | MEDIUM | 2026-08-14 | T1 | [Details](tasks/T2.md) |
+| T3 | Migrate Skills (Sanitized) | ✅ | HIGH | 2026-08-14 | T1 | [Details](tasks/T3.md) |
+| T4 | Migrate Scripts (Sanitized) | ✅ | HIGH | 2026-08-14 | T1 | [Details](tasks/T4.md) |
+| T5 | Token Usage Tracking System | ✅ | HIGH | 2026-07-15 | — | [Details](tasks/T5.md) |
+| T6 | Documentation & Polish | ✅ | MEDIUM | 2026-08-14 | T3, T4 | [Details](tasks/T6.md) |
+| T7 | K3 Benchmark | ✅ | LOW | 2026-07-17 | — | [Details](tasks/T7.md) |
+| T8 | Cron Management Skill | ✅ | MEDIUM | 2026-07-20 | — | [Details](tasks/T8.md) |
+| T9 | Import mem-* Skills from .agents | ✅ | HIGH | 2026-07-28 | — | [Details](tasks/T9.md) |
+| T10 | Token-usage consistency across providers | 🔄 | MEDIUM | 2026-08-14 | T5 | [Details](tasks/T10.md) |
+| T11 | Provider/model availability study harness | 🔄 | LOW | 2026-08-15 | T8 | [Details](tasks/T11.md) |
+| T12 | Kimi Retry Storm Monitor | ✅ | MEDIUM | 2026-08-17 | — | [Details](tasks/T12.md) |
+| T13 | Kimi/OpenClaw long-context tool degradation | 🔄 | LOW | 2026-08-23 | — | [Details](tasks/T13.md) |
+| T14 | OpenAI Luna Thinking Level Benchmark | 🔄 | LOW | 2026-09-02 | T7, T11 | [Details](tasks/T14.md) |
+| T15 | Token-Usage Parser — zstd + Codex/interactive split | ✅ | MEDIUM | 2026-09-16 | T5 | [Details](tasks/T15.md) |
+| T16 | Token-Usage Parser — 9.x Version Awareness + SQLite Fix | ✅ | HIGH | 2026-09-18 | T15, INFRA-6 | [Details](tasks/T16.md) |
+
+---
+
+## Task Details
+
 ## T1: Repo Infrastructure ✅ COMPLETE
 - [x] Rename `openclaw-tests` → `openclaw-tools`
 - [x] Clone to workspace
@@ -229,6 +257,19 @@ The `mb-text-workflow` skill had a critical flaw: it defaulted to workspace memo
 - [ ] Cross-provider support (future)
 - [ ] Dashboard/JSONL integration with T11 (future)
 - See [T12 details](tasks/T12.md)
+
+## T16: Token-Usage Parser — 9.x Version Awareness + SQLite Migration Fix
+- [x] Root-cause: version detection read stale Node v22 package.json (2026.6.34) instead of running v24.21.0 install (2026.9.4)
+- [x] Root-cause: macOS sqlite3 URI mode (`file:...?mode=ro`) fails on temp files — use plain `sqlite3.connect()`
+- [x] Root-cause: SQLite timestamps have `Z` suffix, `since`/`until` are local IST — string comparison always False
+- [x] Add `_detect_openclaw_version()` — scans all NVM trees, returns max version
+- [x] Add `detect_storage_backends()` — classifies jsonl/sqlite/mixed, emits version-specific warnings
+- [x] Add `_normalise_ts()` — strips `Z` for cross-format timestamp comparison
+- [x] Add mtime pre-filter to `find_sessions(since=...)` — skips 5,600+ stale files on `--today`
+- [x] Report header shows version, backend, counts, and warnings
+- [x] JSON output includes `openclaw_version`, `storage_backend`, `storage_counts`, `warnings`
+- [x] Verified: `--today` returns real data (855K input / 51K output / $2.43), `--week` returns 26.3M / $35.82
+- See [T16 details](tasks/T16.md)
 
 ## T14: OpenAI Luna Thinking Level Benchmark 🔄 IN PROGRESS (2026-09-02)
 - [x] Smoke test: low vs max thinking on geometric series

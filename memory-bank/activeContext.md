@@ -1,6 +1,10 @@
 # Active Context: openclaw-tools
 
-## Current Focus: T14 OpenAI Luna Thinking Level Benchmark (2026-09-02)
+## Current Focus: T16 Token-Usage 9.x Version Awareness + SQLite Fix (2026-09-18)
+
+T16 fixes the nightly report returning 0 tokens after the 9.x upgrade. Four compounding bugs: stale version detection (read Node v22 package.json instead of v24.21.0), macOS SQLite URI mode failure on temp files, timestamp `Z`-suffix mismatch between SQLite and local IST boundaries, and no mtime pre-filter (scanned all 5,600+ stale JSONL files). All fixed and verified — `--today` now returns 855K input / $2.43.
+
+## Previous Focus: T14 OpenAI Luna Thinking Level Benchmark (2026-09-02)
 
 T14 measures how reasoning effort (low → max) affects correctness, depth, and token usage on gpt-5.6-luna via native Codex authentication. The smoke test confirmed the mechanism works: both low and max thinking levels route through native Codex (provider: openai, api: openai-responses) with observable differences in output depth (99 vs 159 tokens on a simple geometric series proof).
 

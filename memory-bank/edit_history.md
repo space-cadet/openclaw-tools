@@ -1,7 +1,21 @@
 # Edit History
 
 *Created: 2026-09-02 18:52 IST*
-*Last Updated: 2026-09-16 11:17:45 IST*
+*Last Updated: 2026-09-18 21:53:08 IST*
+
+### 2026-09-18
+
+#### 21:53:08 IST - T16: Token-usage parser — 9.x version awareness + SQLite migration fix
+
+- Modified `skills/token-usage/scripts/parse.py` - Added `_detect_openclaw_version()`, `detect_storage_backends()`, `_normalise_ts()`, plain `sqlite3.connect()` (macOS fix), mtime pre-filter in `find_sessions()`
+- Created `memory-bank/tasks/T16.md` - Full task documentation
+- Modified `memory-bank/tasks.md` - Added T16 to registry (normalized to mb-core table format)
+- Modified `memory-bank/activeContext.md` - T16 as current focus
+- Modified `memory-bank/progress.md` - T16 completion record
+- Modified `memory-bank/session_cache.md` - Session handoff
+- Created `memory-bank/sessions/2026-09-18-evening.md` - Session record
+
+**Verification:** `--today` returns 855K input / $2.43, `--week` returns 26.3M / $35.82
 
 ### 2026-09-16
 
