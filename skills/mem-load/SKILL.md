@@ -3,14 +3,9 @@ name: mem-load
 description: Global workflow for loading memory bank files based on recent activity and context Use when the user invokes $mem-load or asks for this workflow by name.
 ---
 
-# mem-load
-
-This skill is a Codex conversion of the Windsurf global workflow at `~/.codeium/windsurf/global_workflows/mem-load.md`. Follow the workflow below, adapting Windsurf-specific slash-command wording to Codex skill invocation. If the workflow mentions running `/mem-load`, treat that as explicit invocation of `$mem-load`.
-
 # Memory Load Workflow (mem-load)
 
-## Purpose
-Load relevant memory bank files by analyzing recent activity and context to determine which implementation docs are needed.
+Load relevant memory bank files by analyzing recent activity and context to determine which implementation docs are needed. Invoke as `$mem-load`.
 
 ## Loading Logic
 

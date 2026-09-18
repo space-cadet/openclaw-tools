@@ -1,19 +1,49 @@
 ---
 name: mem-update
-description: Memory Bank Update Workflow — v6.12 compliant with project-repo awareness. Use when the user invokes $mem-update or asks for this workflow by name.
+description: Memory Bank Update Workflow — v6.12 compliant with project-repo awareness. Use when the user invokes $mem-update or asks for this workflow by name. Triggers on "update memory bank", "create edit chunk", "update tasks.md", "update session cache", "memory bank update workflow". NOT for database-native workflows (use mb-db-workflow instead).
 ---
 
-# mem-update (Sage Adaptation)
+# Memory Bank Update Workflow (v6.12 — Sage Adapted)
 
-This skill is adapted from Deepak's Codex skill at `~/.agents/skills/mem-update/`. Key changes for Sage:
-- **Step 0 added:** Project-repo awareness (check timesarrow/code repos before workspace)
-- **Paths updated:** Point to `${MB_CORE_PATH}/` instead of Windsurf paths
-- **Approval relaxed:** Location verification instead of explicit user approval
-- **Cross-repo checks:** Prevents duplicate tasks across workspace and project repos
+This skill implements the 8-step manual memory bank update workflow from integrated-rules v6.12, enhanced with project-repo awareness. All updates are done by directly editing markdown files — no database involved. For the SQLite/`mb` CLI path, use `mb-db-workflow`.
 
-## Memory Bank Update Workflow (Enhanced v6.12 Compliance — Sage Adapted)
+Merged from `mem-update` (Sage adaptation) and `mb-text-workflow` (faithful §6.5 encoding). Key additions:
+- **Step 0:** Project-repo awareness — scan project repos before workspace to prevent duplicate tasks
+- **Correct edit-chunk handling:** `edit_history.md` is a GENERATED VIEW — create chunk files, never edit the view directly
+- **Correct commit format:** `(type)TID: Headline - Details (% complete)`
 
-### Step 0: Identify Correct Memory Bank Location
+## Documentation Philosophy
+
+The memory bank has two complementary documentation layers:
+
+**Chronological Layer** (tells the story):
+- Task files — what was done, when, current status
+- Session files — work completed in each session
+- Edit history — precise record of every file change
+- These answer: "What happened? When? In what order?"
+
+**Knowledge Layer** (stores the understanding):
+- Implementation docs — architecture, design decisions, APIs, patterns
+- Technical context — system architecture, dependencies, constraints
+- Product context — goals, user stories, feature specifications
+- These answer: "How does this work? Why was it built this way? How do I use it?"
+
+Both layers are essential. The chronological layer without the knowledge layer becomes an unreadable pile of session logs. The knowledge layer without the chronological layer loses traceability and becomes stale. They must be maintained together.
+
+## Prerequisites
+
+Before starting, determine:
+1. Current system time and timezone (format: `YYYY-MM-DD HH:MM:SS TZ`)
+2. Active task ID being worked on
+3. Files modified and their change descriptions
+4. Whether implementation documentation needs updating (ALWAYS check this)
+
+## Step 0: Identify Correct Memory Bank Location + Discovery
+
+This skill has TWO Step-0 responsibilities. Handle both before touching any file.
+
+### 0A. Project-Repo Awareness (Location)
+
 - **Check if working on a project:** Before touching ANY memory-bank files, determine:
   - Is there an active project with its own memory-bank? (e.g., `timesarrow/memory-bank/`)
   - Is this workspace/infrastructure work? (e.g., `~/.openclaw/workspace/memory-bank/`)
@@ -22,70 +52,172 @@ This skill is adapted from Deepak's Codex skill at `~/.agents/skills/mem-update/
   - `~/.openclaw/workspace/code/*/memory-bank/` (project repos)
   - `~/.openclaw/workspace/memory-bank/` (workspace)
   - `${MB_CORE_PATH}/` (mb-core repo for reference)
+- **Critical:** If a task exists in a project repo, DO NOT create it in workspace memory-bank.
 
-### Step 1: Read Memory Bank Update Protocol
-- **First Action:** Read the memory bank update protocol from `${MB_CORE_PATH}/integrated-rules-v6.12.md` (Sections 1.5, 1.6, and 6.5)
-- **Alternative:** If mb-core doesn't have it, check `memory-bank/integrated-rules-v6.12.md` in the target repo
-- **Purpose:** Understand strict compliance requirements, file operation standards, and approval protocols
-- **Critical:** Must read this before making any file modifications
+### 0B. Discovery — What Work Needs Documentation?
 
-### Step 2: Deep Memory Bank Scan
-- **Comprehensive Scan:** Perform deep scan of ENTIRE memory bank structure across ALL relevant repos
-- **Identify Related Content:**
-  - All existing tasks in `memory-bank/tasks/` related to current work (check ALL project repos)
-  - All sub-tasks and implementation details in `memory-bank/implementation-details/`
-  - Relevant session files and cache entries
-  - Current active context and task registry
-- **Critical:** If a task exists in a project repo (e.g., timesarrow), DO NOT create it in workspace memory-bank
-- **Analysis:** Determine relationships and dependencies between existing documentation
+**Use this when you do not already have a complete record of what was done.** If you have been tracking work as it happened, skip to the 8-step workflow.
 
-### Step 3: Verify Location Before Creating
-- **Assessment:** Based on deep scan, determine if new tasks, sub-tasks, or implementation docs are needed
-- **Location Check:** Before creating ANY new file, verify:
-  1. Does this task already exist in another repo's memory-bank?
-  2. Is this project work or workspace infrastructure work?
-  3. What is the CORRECT memory-bank location?
-- **If unsure:** Ask user for confirmation of correct location
-- **Prevention:** Never create duplicate tasks across workspace and project repos
+**Use discovery when:**
+- You are resuming after a session restart or context loss
+- You were not the agent that performed the work
+- The user says "update the memory bank" without specifying what changed
+- You suspect work was done that you are not aware of
 
-### Step 4: Initialize Context (Time & Timezone)
-- **Get Current Time:** Determine current system time and timezone (IST format: `YYYY-MM-DD HH:MM:SS TZ`)
-- **Verify Timestamp Standards:** Ensure compliance with v6.12 timestamp requirements
-- **Prepare for Updates:** Have accurate timestamps ready for all file updates
+#### 0.1 Check Last Memory-Bank Update
+Read `memory-bank/edit_history.md` or `memory-bank/session_cache.md` to find the last update timestamp.
 
-### Step 5: Update Specific Files (Task/Implementation)
-- **Template Compliance:** All file updates MUST follow the exact formats given in `${MB_CORE_PATH}/memory-bank/templates/` folder
-- **Available Templates:** 
-  - `task-template.md` for new task files
-  - `tasks.md` for task registry
-  - `session_cache.md` for session cache
-  - `edit_history.md` for edit history
-  - `activeContext.md` for active context
-  - And other specialized templates as needed
-- **Targeted Updates:** Update only the specific task files and implementation docs identified in Steps 0-2
-- **Strict Rule:** Use `edit_block` (or equivalent) for updates. **Never** overwrite whole files unless creating new ones
-- **Schema Compliance:** Follow v6.12 requirements AND template formats exactly
-- **Cross-repo awareness:** When updating, check if linked files exist in the same repo. Don't link to files in other repos unless intentional.
+#### 0.2 Examine Git History (if needed)
+```bash
+cd <project-root>
+git log --since="<last-memory-bank-update-date>" --oneline
+```
 
-### Step 6: Update Registries (Strict Schema Enforced)
-- **`tasks.md`:** Update status/timestamps
-  - *Constraint:* Must match `| ID | Title | Status | Priority | Started | Dependencies | Details |`
-  - *Constraint:* Status must be `🔄`, `✅`, `⏸️`, or `❌`
-  - *Constraint:* Details must be `[Details](tasks/Txx.md)`
-- **`session_cache.md`:** Update active tasks/history
+#### 0.3 Check Uncommitted Changes (if needed)
+```bash
+git status
+git diff --stat
+```
 
-### Step 7: Update Session Log
-- **Check for `sessions/YYYY-MM-DD-PERIOD.md`** in the target repo
-- **If exists:** Update while **PRESERVING EXISTING CONTENT**. Append new work items
-- **If new:** Create with standard header following v6.12 template
+#### 0.4 Review Existing Edit Chunks
+```bash
+ls -la memory-bank/edits/
+cat memory-bank/edits/YYYY-MM-DD/HHMMSS-*.md
+```
 
-### Step 8: Update History (Strict Regex Compliance)
-- **`edit_history.md`:** Prepend new entry
-  - *Header:* `#### HH:MM:SS IST - TaskID: Description`
-  - *Bullet:* `- Action `relative/path` - Description`
-  - *Action:* `Created`, `Modified`, `Updated`, `Deleted`
+#### 0.5 Build Work Summary
+| Task ID | Description | Files Changed | Status |
+|---------|-------------|---------------|--------|
+| Txx | What was done | file1, file2 | in_progress / completed |
 
-### Step 9: Finalize
-- **Generate Commit Message:** Create commit message per v6.12 format
-- **Verify Compliance:** Ensure all updates follow strict v6.12 requirements
-- **Document Completion:** Note workflow completion in appropriate logs
+**Anti-pattern:** Documenting only what you remember without verifying completeness.
+
+## The 8-Step Workflow
+
+### Step 1: Update Individual Task File
+
+File: `memory-bank/tasks/Txx.md`
+
+If the task file exists, append progress updates. If not, request user approval to create it.
+
+**Status emojis (STRICT):**
+- 🔄 = In Progress
+- ✅ = Completed
+- ⏸️ = Paused
+- ❌ = Cancelled
+
+Update `*Last Updated*` timestamp. Keep Progress section current (✅ / 🔄 / ⬜).
+
+### Step 2: Update tasks.md Registry
+
+File: `memory-bank/tasks.md`
+
+MUST use the strict table schema:
+```markdown
+| ID | Title | Status | Priority | Started | Dependencies | Details |
+|----|-------|--------|----------|---------|--------------|---------|
+| T1 | [Title] | 🔄 | HIGH | 2025-04-10 | - | [Details](tasks/T1.md) |
+```
+
+**Rules:**
+- Details column MUST be a link: `[Details](tasks/Txx.md)` or `[Details](archive/Txx.md)`
+- Status MUST use standard emojis only (🔄 / ✅ / ⏸️ / ❌)
+- Keep active tasks at top, completed below
+
+### Step 3: Update Implementation Documentation (CRITICAL)
+
+**This step is not optional.** Every significant change must be reflected here.
+
+**When to update:**
+- New feature or capability → document how it works
+- API changed → update usage examples and signatures
+- Architecture decision made → document the rationale
+- Bug fixed with non-obvious root cause → document for future reference
+- Pattern or convention established → document as project standard
+
+**Files to consider:**
+- `implementation-details/` — technical deep-dives, architecture decisions
+- `techContext.md` — system architecture, dependencies, constraints
+- `productContext.md` — goals, user stories, feature specifications
+- `systemPatterns.md` — established patterns and conventions
+- `activeContext.md` — current focus and recent decisions
+
+**Anti-pattern:** "I'll document it later." Later never comes. Document while the context is fresh.
+
+### Step 4: Handle Session File
+
+File: `memory-bank/sessions/YYYY-MM-DD-PERIOD.md`
+
+Check if current session file exists. If yes, append to it **while preserving all existing content**. If no, create it.
+
+Periods: morning, afternoon, evening, night
+
+### Step 5: Update Session Cache
+
+File: `memory-bank/session_cache.md`
+
+Update the Current Session block, Overview counts, Task Registry, and Session History (last 5). Preserve all existing history.
+
+### Step 6: Update Other Memory Bank Files
+
+- `activeContext.md` — if focus task or current context changed
+- `errorLog.md` — if errors were encountered and fixed
+- `progress.md` — if milestones were completed
+- `changelog.md` — if features or bugs were addressed
+
+### Step 7: Create Edit Chunk (CRITICAL — canonical record)
+
+File: `memory-bank/edits/YYYY-MM-DD/HHMMSS-Txx-edit-chunk.md`
+
+**`edit_history.md` is a GENERATED VIEW — NEVER edit it directly.** The chunk file is the canonical record.
+
+Template:
+```markdown
+---
+kind: edit_chunk
+id: [unique-id]
+created_at: YYYY-MM-DD HH:MM:SS TZ
+task_ids: [Txx]
+source_branch: [branch-name]
+source_commit: [40-char-sha]
+---
+
+#### HH:MM:SS TZ - Txx: Description
+- Modified `file/path` - Specific technical change description
+- Created `file/path` - What was created and why
+```
+
+**STRICT Format Requirements:**
+- Header: `#### HH:MM:SS TZ - TaskID: Description` (timezone MANDATORY)
+- Bullets: `- Action \`filepath\` - Description`
+- Action MUST be one of: `Created`, `Modified`, `Updated`, `Deleted`
+- Filepath MUST be in backticks AND relative to project root
+- No summary statements or evaluative content
+
+### Step 8: Regenerate edit_history.md
+
+Regenerate `memory-bank/edit_history.md` as a GENERATED VIEW (newest entries on top) from the chunk files. Do not hand-edit it.
+
+## Commit Message Format
+
+```
+(type)TID: Headline - Details (% complete)
+```
+
+Types: feat, fix, docs, refactor, test
+Example: `(feat)T3: Database Migration Complete - Added user table, seed data (90%)`
+
+## Anti-Patterns
+
+- NEVER edit `edit_history.md` directly — always create chunk files and regenerate the view
+- NEVER use relative paths or tildes (~) in file operations — absolute paths only (per §1.4)
+- NEVER overwrite whole files unless creating new ones — use targeted edits (§1.4)
+- NEVER add features without user approval
+- NEVER skip the edit chunk step — it's the canonical record
+- NEVER delete session files — append-only
+- NEVER create a task in workspace memory-bank if it belongs to a project repo (Step 0A)
+
+## References
+
+- `${MB_CORE_PATH}/integrated-rules-v6.12.md` — full v6.12 rules (read Sections 1.4, 1.5, 4.8, 6.5)
+- `${MB_CORE_PATH}/memory-bank/templates/` — all file templates

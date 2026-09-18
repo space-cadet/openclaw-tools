@@ -5,28 +5,24 @@ description: Memory Bank Template Compliance Cleaner Workflow Use when the user 
 
 # mem-format
 
-This skill is a Codex conversion of the Windsurf global workflow at `~/.codeium/windsurf/global_workflows/mem-format.md`. Follow the workflow below, adapting Windsurf-specific slash-command wording to Codex skill invocation. If the workflow mentions running `/mem-format`, treat that as explicit invocation of `$mem-format`.
-
-The mem-format workflow scans memory bank files and revises them to conform to established templates. This ensures consistency across all memory bank documentation and maintains proper formatting standards.
+The mem-format workflow scans memory bank files and revises them to conform to established templates. This ensures consistency across all memory bank documentation and maintains proper formatting standards. Invoke as `$mem-format`.
 
 ## Usage
 
 Run this workflow to:
-1. Clean specific files: `/mem-format [file1.md] [file2.md]`
-2. Clean entire memory bank: `/mem-format all`
-3. Clean by category: `/mem-format tasks` or `/mem-format sessions`
+1. Clean specific files: `$mem-format [file1.md] [file2.md]`
+2. Clean entire memory bank: `$mem-format all`
+3. Clean by category: `$mem-format tasks` or `$mem-format sessions`
 
 ## Workflow Steps
 
 ### Step 1: Scan Target Files
-// turbo
 Identify files to be processed based on user input:
 - Specific files provided as arguments
 - Entire memory bank if "all" specified
 - Category-based filtering (tasks, sessions, etc.)
 
 ### Step 2: Template Matching
-// turbo
 For each file, determine the appropriate template:
 - Task files (T*.md in tasks/ directory) → task-template.md
 - Session files (YYYY-MM-DD-*.md in sessions/ directory) → session-template.md
@@ -35,7 +31,6 @@ For each file, determine the appropriate template:
 - Implementation details → flexible template matching
 
 ### Step 3: Compliance Analysis
-// turbo
 Analyze each file against its template:
 - Check required sections presence
 - Validate section order and formatting
@@ -44,7 +39,6 @@ Analyze each file against its template:
 - Identify missing or malformed content
 
 ### Step 4: Content Extraction
-// turbo
 Extract existing content from files:
 - Preserve actual data and information
 - Identify template placeholders vs real content
@@ -53,7 +47,6 @@ Extract existing content from files:
 - Maintain relationships and dependencies
 
 ### Step 5: Template Application
-// turbo
 Reconstruct files using proper templates:
 - Apply correct template structure
 - Insert extracted content into appropriate sections
@@ -63,7 +56,6 @@ Reconstruct files using proper templates:
 - Add missing required sections
 
 ### Step 6: Validation
-// turbo
 Validate revised files:
 - Check all required sections present
 - Verify markdown syntax correctness
@@ -72,7 +64,6 @@ Validate revised files:
 - Check for template remnants (placeholders)
 
 ### Step 7: Report Generation
-// turbo
 Generate comprehensive report:
 - List of files processed
 - Issues found and fixed
@@ -92,6 +83,8 @@ Generate comprehensive report:
 | activeContext.md | activeContext.md | memory-bank/ |
 | errorLog.md | errorLog.md | memory-bank/ |
 | progress.md | progress.md | memory-bank/ |
+
+**Note:** `edit_history.md` is a GENERATED VIEW built from chunk files in `memory-bank/edits/`. Do not reformat it directly — fix the underlying chunk files and regenerate the view.
 
 ## Common Issues Fixed
 
@@ -123,21 +116,18 @@ Generate comprehensive report:
 ## Safety Measures
 
 ### 1. Backup Creation
-// turbo
 Before modifying files, create backups:
 - Copy original files to backup location
 - Timestamp backup directories
 - Maintain change history
 
 ### 2. Content Preservation
-// turbo
 Ensure no content loss:
 - Extract all existing data before restructuring
 - Verify content integrity after revision
 - Manual review for complex cases
 
 ### 3. Progressive Application
-// turbo
 Apply changes incrementally:
 - Process one file at a time
 - Validate each change
@@ -145,46 +135,20 @@ Apply changes incrementally:
 
 ## Implementation Notes
 
-### Template Detection Algorithm
-```typescript
-function detectTemplate(filePath: string): string {
-  if (filePath.includes('tasks/T') && filePath.endsWith('.md')) {
-    return 'task-template.md';
-  }
-  if (filePath.includes('sessions/') && /^\d{4}-\d{2}-\d{2}/.test(filePath)) {
-    return 'session-template.md';
-  }
-  // ... other patterns
-  return 'default-template.md';
-}
+Template detection logic (pseudocode):
+
+```
+if path matches 'tasks/T*.md':
+    template = 'task-template.md'
+elif path matches 'sessions/YYYY-MM-DD-*.md':
+    template = 'session-template.md'
+elif path is a known registry file (tasks.md, session_cache.md, ...):
+    template = '<basename>'
+else:
+    template = 'default-template.md'
 ```
 
-### Content Extraction Strategy
-```typescript
-function extractContent(fileContent: string, template: string): Record<string, string> {
-  const sections = parseTemplateSections(template);
-  const extracted = {};
-  
-  sections.forEach(section => {
-    extracted[section] = findSectionContent(fileContent, section);
-  });
-  
-  return extracted;
-}
-```
-
-### Template Application Process
-```typescript
-function applyTemplate(template: string, extractedContent: Record<string, string>): string {
-  let result = template;
-  
-  Object.entries(extractedContent).forEach(([section, content]) => {
-    result = result.replace(`[${section.toUpperCase()}]`, content || '');
-  });
-  
-  return result;
-}
-```
+Content extraction and re-application preserve the existing data while restructuring it into the correct template sections. The formatter is a transformation tool, not a database — it edits markdown in place.
 
 ## Quality Assurance
 
@@ -212,7 +176,7 @@ function applyTemplate(template: string, extractedContent: Record<string, string
 1. **Template Not Found**: Use default template for unknown file types
 2. **Content Loss**: Restore from backup and retry with manual review
 3. **Format Conflicts**: Prioritize existing content over strict template compliance
-4. **Large Files**: Process in chunks to avoid memory issues
+4. **Large Files**: Process in chunks
 
 ### Error Handling
 - Graceful degradation for template mismatches
@@ -222,14 +186,8 @@ function applyTemplate(template: string, extractedContent: Record<string, string
 
 ## Maintenance
 
-### Regular Updates
 - Update template mappings as new templates are added
-- Refine detection algorithms based on usage patterns
-- Enhance content extraction logic for edge cases
-
-### Template Evolution
-- Version templates for backward compatibility
-- Migration paths for template changes
-- Documentation of template modifications
+- Refine detection logic based on usage patterns
+- Templates live in `${MB_CORE_PATH}/memory-bank/templates/` (or the target repo's `memory-bank/templates/`)
 
 This workflow ensures memory bank files maintain consistent structure and formatting while preserving all valuable content and implementation details.
