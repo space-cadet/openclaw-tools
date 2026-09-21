@@ -94,6 +94,13 @@ def classify_session(path):
         open_fn = open
     try:
         with open_fn(path, "rt", encoding="utf-8", errors="replace") as f:
+            # Scan up to the first N user messages for the [cron:...] marker.
+            # The marker is injected into the session context but is NOT always
+            # in the very first user message (which may be empty or an image).
+            # Limit the scan so we don't read an entire large session just to
+            # classify it.
+            user_msgs_seen = 0
+            MAX_USER_MSGS = 20
             for line in f:
                 line = line.strip()
                 if not line:
@@ -107,12 +114,19 @@ def classify_session(path):
                 m = msg.get("message", {})
                 if m.get("role") != "user":
                     continue
+                user_msgs_seen += 1
+                if user_msgs_seen > MAX_USER_MSGS:
+                    break
                 content = m.get("content", [])
                 text = ""
-                for c in content:
-                    if isinstance(c, dict) and c.get("type") == "text":
-                        text += c.get("text", "")
-                
+                if isinstance(content, str):
+                    # Plain-string content (e.g. cron system-prompt injections).
+                    text = content
+                else:
+                    for c in content:
+                        if isinstance(c, dict) and c.get("type") == "text":
+                            text += c.get("text", "")
+
                 # Detect cron
                 match = re.search(r'\[cron:([a-f0-9\-]+)\s+([^\]]+)\]', text)
                 if match:
@@ -120,12 +134,13 @@ def classify_session(path):
                 match2 = re.search(r'\[cron:([a-z0-9\-]+)\s+([^\]]+)\]', text)
                 if match2:
                     return f"cron:{match2.group(2).strip()}"
-                
+
                 # Detect background
                 if "bg:" in str(path) or "background" in text.lower():
                     return "background"
-                
-                return "user"
+
+            # No marker found in the scanned window — treat as interactive.
+            return "user"
     except Exception:
         pass
     return "user"
