@@ -98,19 +98,26 @@ def merge_pricing(openrouter_rates):
             "updated": datetime.now().isoformat(),
         }
     
-    # Add other known rates
-    pricing["anthropic/claude-sonnet-4-5"] = {
-        "input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75,
-        "source": "fallback", "updated": datetime.now().isoformat(),
+    # Add other known rates ONLY if OpenRouter doesn't have them
+    known_fallbacks = {
+        "anthropic/claude-sonnet-4-5": {
+            "input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75,
+        },
+        "openai/gpt-4o": {
+            "input": 2.50, "output": 10.00, "cache_read": 1.25, "cache_write": 0,
+        },
+        "openai/gpt-4o-mini": {
+            "input": 0.15, "output": 0.60, "cache_read": 0.075, "cache_write": 0,
+        },
     }
-    pricing["openai/gpt-4o"] = {
-        "input": 2.50, "output": 10.00, "cache_read": 1.25, "cache_write": 0,
-        "source": "fallback", "updated": datetime.now().isoformat(),
-    }
-    pricing["openai/gpt-4o-mini"] = {
-        "input": 0.15, "output": 0.60, "cache_read": 0.075, "cache_write": 0,
-        "source": "fallback", "updated": datetime.now().isoformat(),
-    }
+    
+    for model, rates in known_fallbacks.items():
+        if model not in openrouter_rates:
+            pricing[model] = {
+                **rates,
+                "source": "fallback",
+                "updated": datetime.now().isoformat(),
+            }
     
     # Overlay OpenRouter rates for comparison (stored separately)
     for model, rates in openrouter_rates.items():
